@@ -730,10 +730,26 @@
           <span>Unity Catalog Lineage & DQ</span>
         </a>
 
+        <div class="nav-section-title">Engineering & Delivery</div>
+        <a class="nav-item" href="#e2e-mvp-spec" onclick="setActiveNav(this)">
+          <span>📋</span>
+          <span>E2E MVP Task Spec</span>
+          <span class="nav-badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4);">11 Epics</span>
+        </a>
+        <a class="nav-item" href="./e2e_mvp_task_spec.md" target="_blank">
+          <span>📄</span>
+          <span>Task Spec Markdown</span>
+          <span class="nav-badge">Raw .md</span>
+        </a>
+
         <div class="nav-section-title">Quick Actions</div>
         <a class="nav-item" href="./index.html" style="color: var(--secondary);">
           <span>🚀</span>
           <span>Launch Live App UI</span>
+        </a>
+        <a class="nav-item" href="./index.html#/docs?tab=mvp_spec" style="color: var(--primary-light);">
+          <span>📊</span>
+          <span>In-App MVP Roadmap</span>
         </a>
       </nav>
     </aside>
@@ -748,6 +764,9 @@
         </div>
 
         <div class="header-actions">
+          <a href="./e2e_mvp_task_spec.md" target="_blank" class="btn btn-outline" style="border-color: rgba(16, 185, 129, 0.4); color: #10b981;">
+            <span>📋 View Task Spec (.md)</span>
+          </a>
           <a href="./index.html" class="btn btn-outline">
             <span>← Back to Application</span>
           </a>
@@ -1582,6 +1601,177 @@ flowchart LR
                 <div class="service-desc">
                   Curated HSL color palette, dark mode glassmorphism (<code>backdrop-filter: blur(16px)</code>), fluid typography, and accessible contrast ratios.
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chapter 11: E2E MVP Task & Technical Specification -->
+        <section class="doc-section" id="e2e-mvp-spec">
+          <div class="section-title-wrap">
+            <span class="section-num">11</span>
+            <h2 class="section-title">End-to-End MVP Task & Engineering Specification</h2>
+          </div>
+
+          <div class="card">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+              <div>
+                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 600; font-size: 11px; padding: 4px 10px; border-radius: 20px;">
+                  ● APPROVED FOR IMPLEMENTATION • 11 EPICS • 35+ TASKS
+                </span>
+                <p style="color: var(--text-secondary); margin-top: 10px; font-size: 14px; max-width: 800px; line-height: 1.6;">
+                  Exhaustive technical execution blueprint for building the <strong>Unify AI Customer Domain Unification MVP</strong> 
+                  on Databricks Lakehouse. Utilizes TypeScript microservices, Databricks Lakebase active metastore, dynamic layer spawner, 
+                  automated DLT/DABs pipelines, and Databricks Genie zero-copy querying.
+                </p>
+              </div>
+
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="./e2e_mvp_task_spec.md" target="_blank" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+                  <span>📄 Open Raw Task Spec (.md)</span>
+                </a>
+                <a href="./index.html#/docs?tab=mvp_spec" class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+                  <span>📊 Open Interactive App Roadmap</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- 6-Week Delivery Roadmap -->
+            <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+              <div style="font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--primary-light); font-weight: 700; margin-bottom: 12px; letter-spacing: 0.05em;">
+                🚀 6-WEEK MVP SPRINT ROADMAP (ARCHITECTURAL REMEDIATIONS INTEGRATED)
+              </div>
+              <div class="grid-3" style="gap: 12px;">
+                <div style="background: rgba(30, 41, 59, 0.5); padding: 14px; border-radius: 8px; border-left: 3px solid var(--primary);">
+                  <div style="font-family: var(--font-mono); font-size: 11px; color: var(--primary-light); font-weight: bold;">WEEK 1: Control Plane & Hybrid Metastore</div>
+                  <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Epics 1 & 2: Turborepo, @unify/types, @unify/operational-cache (< 5ms reads), system.unify_lakebase Delta schema.</div>
+                </div>
+                <div style="background: rgba(30, 41, 59, 0.5); padding: 14px; border-radius: 8px; border-left: 3px solid var(--secondary);">
+                  <div style="font-family: var(--font-mono); font-size: 11px; color: var(--secondary); font-weight: bold;">WEEK 2: Ingestion Connectors & Layer Spawner + Reaper</div>
+                  <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Epics 3 & 4: SFDC (Bulk+CDC), Postgres (WAL), Kafka & Auto Loader connectors, Serverless SQL layer spawner + sandbox TTL reaper.</div>
+                </div>
+                <div style="background: rgba(30, 41, 59, 0.5); padding: 14px; border-radius: 8px; border-left: 3px solid var(--accent);">
+                  <div style="font-family: var(--font-mono); font-size: 11px; color: var(--accent); font-weight: bold;">WEEK 3: Automated Pipelines & DQ</div>
+                  <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Epics 5 & 6: DABs (databricks.yml) & DLT streaming synthesis, Great Expectations Delta rules.</div>
+                </div>
+                <div style="background: rgba(30, 41, 59, 0.5); padding: 14px; border-radius: 8px; border-left: 3px solid var(--warning);">
+                  <div style="font-family: var(--font-mono); font-size: 11px; color: var(--warning); font-weight: bold;">WEEK 4: Distributed PySpark Splink Engine</div>
+                  <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Epic 7: Bifurcated Fellegi-Sunter matching in PySpark Splink on Databricks clusters, survivorship matrix.</div>
+                </div>
+                <div style="background: rgba(30, 41, 59, 0.5); padding: 14px; border-radius: 8px; border-left: 3px solid #ec4899;">
+                  <div style="font-family: var(--font-mono); font-size: 11px; color: #ec4899; font-weight: bold;">WEEK 5: Guardrailed Genie Spaces & 360 API</div>
+                  <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Epics 8 & 9: Certified semantic views (v_semantic_*), zero-copy pushdown guardrails, sub-10ms GraphQL API.</div>
+                </div>
+                <div style="background: rgba(30, 41, 59, 0.5); padding: 14px; border-radius: 8px; border-left: 3px solid var(--success);">
+                  <div style="font-family: var(--font-mono); font-size: 11px; color: var(--success); font-weight: bold;">WEEK 6: React 19 UI & Verification</div>
+                  <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Epics 10 & 11: Visual DAG canvas, Steward review queue, Genie drawer, 2M+ record golden path test.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Epics Summary Table -->
+            <table class="spec-table">
+              <thead>
+                <tr>
+                  <th>Epic ID</th>
+                  <th>Component / Domain</th>
+                  <th>Core Engineering Deliverable</th>
+                  <th>Target Timeline</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="cell-mono" style="color: var(--primary-light);">EPIC-1</td>
+                  <td>Monorepo & Shared Types</td>
+                  <td>Turborepo, @unify/types domain contracts, @unify/databricks-client SDK</td>
+                  <td>Sprint 1 (W1)</td>
+                  <td><span class="tag" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">Approved</span></td>
+                </tr>
+                <tr>
+                  <td class="cell-mono" style="color: var(--primary-light);">EPIC-2</td>
+                  <td>Hybrid Lakebase Metastore</td>
+                  <td><code>system.unify_lakebase</code> Delta tables + @unify/operational-cache (sub-5ms reads)</td>
+                  <td>Sprint 1 (W1)</td>
+                  <td><span class="tag" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">Approved</span></td>
+                </tr>
+                <tr>
+                  <td class="cell-mono" style="color: var(--primary-light);">EPIC-3</td>
+                  <td>Ingestion & Federation Connectors</td>
+                  <td>SFDC (Bulk v2+CDC), PostgreSQL (WAL), Kafka (Structured Stream+DLQ), and S3/ADLS Auto Loader</td>
+                  <td>Sprint 2 (W2)</td>
+                  <td><span class="tag" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">Approved</span></td>
+                </tr>
+                <tr>
+                  <td class="cell-mono" style="color: var(--primary-light);">EPIC-4</td>
+                  <td>Dynamic Layer Spawner</td>
+                  <td>On-demand DDL provisioning for <code>v_bronze</code>, <code>silver</code>, <code>gold_master</code>, <code>sandbox</code> + TTL Reaper</td>
+                  <td>Sprint 2 (W2)</td>
+                  <td><span class="tag" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">Approved</span></td>
+                </tr>
+                <tr>
+                  <td class="cell-mono" style="color: var(--primary-light);">EPIC-5</td>
+                  <td>Automated Pipelines</td>
+                  <td>AST compiler generating <code>databricks.yml</code> (DABs) and Delta Live Tables (DLT)</td>
+                  <td>Sprint 3 (W3)</td>
+                  <td><span class="tag" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">Approved</span></td>
+                </tr>
+                <tr>
+                  <td class="cell-mono" style="color: var(--primary-light);">EPIC-6</td>
+                  <td>Data Quality Intelligence</td>
+                  <td>Lakehouse Monitoring, Great Expectations assertion compiler, quarantine tables</td>
+                  <td>Sprint 3 (W3)</td>
+                  <td><span class="tag" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">Approved</span></td>
+                </tr>
+                <tr>
+                  <td class="cell-mono" style="color: var(--primary-light);">EPIC-7</td>
+                  <td>Bifurcated Entity Resolution</td>
+                  <td>Distributed Fellegi-Sunter & Jaro-Winkler in PySpark Splink on Databricks clusters</td>
+                  <td>Sprint 4 (W4)</td>
+                  <td><span class="tag" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">Approved</span></td>
+                </tr>
+                <tr>
+                  <td class="cell-mono" style="color: var(--primary-light);">EPIC-8</td>
+                  <td>Guardrailed Genie Queries</td>
+                  <td>Genie Spaces with certified semantic views (v_semantic_*) and rate-limit guardrails</td>
+                  <td>Sprint 5 (W5)</td>
+                  <td><span class="tag" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">Approved</span></td>
+                </tr>
+                <tr>
+                  <td class="cell-mono" style="color: var(--primary-light);">EPIC-9</td>
+                  <td>Entity 360 & Activation</td>
+                  <td>Sub-10ms GraphQL profile API, identity graph traversal, Kafka events, reverse ETL</td>
+                  <td>Sprint 5 (W5)</td>
+                  <td><span class="tag" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">Approved</span></td>
+                </tr>
+                <tr>
+                  <td class="cell-mono" style="color: var(--primary-light);">EPIC-10</td>
+                  <td>React 19 + TS Frontend</td>
+                  <td>Visual Spawner, Pipeline DAG builder, Steward Review Queue, Genie Drawer</td>
+                  <td>Sprint 6 (W6)</td>
+                  <td><span class="tag" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">Approved</span></td>
+                </tr>
+                <tr>
+                  <td class="cell-mono" style="color: var(--primary-light);">EPIC-11</td>
+                  <td>E2E Verification & Testing</td>
+                  <td>2M Salesforce + 8M SAP golden path customer journey test, Vitest & Playwright suites</td>
+                  <td>Sprint 6 (W6)</td>
+                  <td><span class="tag" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">Approved</span></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- DoD Box -->
+            <div style="margin-top: 20px; padding: 18px 20px; background: rgba(99, 102, 241, 0.08); border-left: 4px solid var(--primary); border-radius: 0 10px 10px 0;">
+              <strong style="color: #fff; font-size: 13.5px;">Remediated MVP Definition of Done (DoD):</strong>
+              <div style="font-size: 12px; color: #cbd5e1; margin-top: 6px; line-height: 1.7;">
+                1. <strong>Zero Data Replication:</strong> Raw CRM/ERP data federated directly via Unity Catalog without forced lakehouse copying.<br/>
+                2. <strong>Hybrid Metastore (< 5ms):</strong> Models and states stored in <code>system.unify_lakebase</code> Delta tables with Redis/Postgres operational cache preventing concurrent steward merge lock collisions.<br/>
+                3. <strong>Bifurcated Runtime:</strong> TypeScript control plane + PySpark Splink data plane on Databricks clusters for high-throughput Fellegi-Sunter matching.<br/>
+                4. <strong>Governed Dynamic Layers:</strong> Serverless SQL spawns layers with mandatory TTL tags and automated reaper purging to guarantee 0 catalog bloat.<br/>
+                5. <strong>Automated Pipelines:</strong> Visual DAGs compile to DABs (<code>databricks.yml</code>) and deploy to running DLT pipelines.<br/>
+                6. <strong>Guardrailed Genie Zero-Copy:</strong> Conversational questions execute pushed-down SQL queries over certified semantic views with 0 external API rate limit violations.<br/>
+                7. <strong>Full Type Safety:</strong> 100% TypeScript coverage across all control plane services and React 19 SPA.
               </div>
             </div>
           </div>

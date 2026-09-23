@@ -310,13 +310,15 @@ For a polished client/leadership deck, I would use 6 slides:
 6.	MVP Architecture & Evolution Path — what is live in week 1 vs enterprise scale
 
 ________________________________________
-8. TypeScript Microservices Architecture & Contracts
+8. Bifurcated Runtime: TypeScript Control Plane + PySpark Data Plane
 
-All Unify AI Control Plane microservices are built with **TypeScript** on Node.js/Fastify/tRPC. They run as containerized microservices on Databricks Apps or Kubernetes clusters, communicating via type-safe RPC and OpenAPI specifications.
+Unify AI employs a **Bifurcated Runtime Strategy** to optimize for both developer velocity and distributed data-plane performance:
+- **Control Plane (TypeScript on Node.js / Fastify / tRPC)**: Powers the API Gateway, web UI backend, Lakebase metadata orchestration, DDL generation, and lifecycle management. All client/server contracts share strict types via `@unify/types`.
+- **Data Plane (Python / PySpark / Splink)**: Executes heavy compute tasks including pairwise Fellegi-Sunter probabilistic matching (via Splink on Databricks clusters / DuckDB), Delta Live Tables streaming jobs, and distributed data quality profiling.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                       TYPESCRIPT MICROSERVICES CLUSTER                      │
+│                       CONTROL PLANE (TypeScript Microservices)               │
 ├──────────────────────────────┬──────────────────────────────┬───────────────┤
 │ Microservice Name            │ Responsibilities             │ Port / Protocol│
 ├──────────────────────────────┼──────────────────────────────┼───────────────┤
@@ -330,12 +332,19 @@ All Unify AI Control Plane microservices are built with **TypeScript** on Node.j
 │                              │ autoloader, Delta MERGE jobs │               │
 │ dq-intelligence-service      │ Schema profiling, Great      │ 4005 / REST   │
 │                              │ Expectations, anomaly triage │               │
-│ unification-engine-service   │ Fellegi-Sunter, fuzzy, graph │ 4006 / Spark  │
-│                              │ clustering, survivorship     │               │
+│ unification-engine-service   │ Orchestrates Splink PySpark, │ 4006 / Jobs   │
+│                              │ graph clustering, decisions  │               │
 │ genie-zerocopy-query-service │ Genie Spaces, NL-to-SQL,     │ 4007 / REST   │
 │                              │ pushdown predicate execution │               │
 │ entity360-activation-service │ Sub-ms 360 profile GraphQL,  │ 4008 / GraphQL│
 │                              │ reverse ETL, Kafka streams   │               │
+├──────────────────────────────┴──────────────────────────────┴───────────────┤
+│                       DATA PLANE (PySpark & Databricks Compute)             │
+├──────────────────────────────┬──────────────────────────────┬───────────────┤
+│ splink-matching-engine       │ Fellegi-Sunter EM probabilistic & fuzzy Jaro-│
+│                              │ Winkler comparisons across millions of pairs  │
+│ dlt-pipeline-templates       │ Declarative streaming Delta Live Tables jobs │
+│ dq-profiler-spark            │ Distributed schema profiling & anomaly triage│
 └──────────────────────────────┴──────────────────────────────┴───────────────┘
 ```
 
@@ -348,6 +357,8 @@ export interface SpawnLayerRequest {
   schemaName: string;
   sourceEntityId: string;
   accessMode: 'ZERO_COPY' | 'SELECTIVE_MATERIALIZED';
+  ttlHours?: number; // Mandatory for sandbox layers
+  ownerService: string;
 }
 
 // Databricks Genie Zero-Copy Query Plan
@@ -358,38 +369,42 @@ export interface ZeroCopyQueryPlan {
   zeroCopyPushedPredicates: string[];
   bytesTransferredFromSource: 0;
   estimatedLatencyMs: number;
+  guardrailValidated: boolean;
 }
 ```
 
 ________________________________________
-9. Databricks Lakebase Active Metastore
+9. Databricks Lakebase Active Metastore + Hybrid Operational Cache
 
-Rather than relying on an external relational database (e.g. Postgres or RDS), Unify AI uses **Databricks Lakebase** as its active metastore directly inside Unity Catalog (`system.unify_lakebase`).
+Unify AI couples **Databricks Lakebase** (`system.unify_lakebase` Delta tables in Unity Catalog) with a **Low-Latency Operational Cache** (PostgreSQL / Redis):
 
 ```
-                    DATABRICKS LAKEBASE METASTORE
-                      (system.unify_lakebase)
+                   HYBRID CONTROL-PLANE METASTORE
   ┌─────────────────────────────────────────────────────────────────┐
-  │  entities           • Canonical entity schemas & domain models  │
-  │  dynamic_layers     • Catalog, schema, and view/table states   │
-  │  source_registry    • Foreign catalog credentials & configs     │
-  │  match_rules        • Fellegi-Sunter weights & blocking keys    │
-  │  survivorship_rules • Winning attribute strategy priority       │
-  │  pipeline_runs      • DLT execution states & run telemetry      │
-  │  audit_lineage      • Immutable column-level provenance history │
+  │  OPERATIONAL CACHE (Postgres/Redis)  [Sub-5ms UI Reads & Locks] │
+  │  • Steward review queue active locks (eliminates Delta conflicts)│
+  │  • Real-time web session configs & dropdown caching             │
+  └──────────────────────────────┬──────────────────────────────────┘
+                                 │ Continuous Asynchronous Sync
+                                 ▼
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  DATABRICKS LAKEBASE METASTORE (system.unify_lakebase Delta)    │
+  │  • Canonical entity schemas & domain models                     │
+  │  • Dynamic layer state registries & securables                  │
+  │  • Fellegi-Sunter weights & blocking rules                      │
+  │  • Immutable column-level provenance & audit lineage            │
   └─────────────────────────────────────────────────────────────────┘
 ```
 
-Benefits:
-- Native ACID guarantees with Delta Lake transactions.
-- Zero impedance mismatch between metadata and Spark/SQL compute.
-- Immutable time-travel audit (`VERSION AS OF`) for regulatory compliance.
-- Inherits Unity Catalog fine-grained RBAC and encryption.
+Key Architectural Benefits:
+- **Zero Concurrency Lock Exceptions**: Operational cache locks prevent Delta `ConcurrentModificationException` during multi-steward simultaneous reviews.
+- **Sub-5ms UI Latency**: Point queries bypass Serverless SQL cold-starts and run in < 5ms.
+- **Enterprise Immutability**: All consolidated changes are checkpointed to `system.unify_lakebase` with full Delta time-travel (`VERSION AS OF`) for regulatory compliance.
 
 ________________________________________
-10. Dynamic Layer Spawning in Databricks
+10. Dynamic Layer Spawning & Automated TTL Governance
 
-Unify AI dynamically provisions database layers across Unity Catalog on demand:
+Unify AI dynamically provisions database layers across Unity Catalog on demand with strict governance:
 
 ```
   ┌─────────────────────────────────────────────────────────────┐
@@ -404,14 +419,23 @@ Unify AI dynamically provisions database layers across Unity Catalog on demand:
   • External View         • Schema Conformed      • Golden Record
   • No data copied        • DQ Assertions (DLT)   • Attribute Surv.
   • Direct pushdown       • Streaming CDC         • Identity Graph
+
+  SIMULATION SANDBOX (SHALLOW CLONE)
+  • Cloned from Silver/Gold for testing new match rules
+  • Enforced TTL: 'unify.sandbox_ttl_hours' = '48'
+  • Automated Reaper: Scheduled worker executing DROP TABLE on expired clones
 ```
 
-Dynamic DDL Example:
+Dynamic DDL Example with Governance Tags:
 ```sql
-CREATE OR REPLACE VIEW unify_prod.v_bronze.v_customer_federated AS
-SELECT source_record_id, entity_payload, _source_timestamp, 'SFDC-001' AS source_origin_id
-FROM foreign_salesforce_catalog.sales_cloud.customer
-WITH SCHEMA EVOLUTION;
+CREATE OR REPLACE TABLE unify_prod.sandbox.sim_sandbox_customer_1790
+SHALLOW CLONE unify_prod.silver.silver_customer_conformed
+TBLPROPERTIES (
+  'unify.sandbox_ttl_hours' = '48',
+  'unify.owner_service' = 'unification-simulation-engine',
+  'unify.layer_tier' = 'sandbox',
+  'unify.spawned_at' = '2026-09-23T22:50:00Z'
+);
 ```
 
 ________________________________________
@@ -423,13 +447,13 @@ The `pipeline-orchestrator-service` compiles visual pipeline DAGs into:
 3. **Delta MERGE Jobs**: Automated upsert and survivorship calculation without manual SQL script authoring.
 
 ________________________________________
-12. Zero-Copy Queries & Databricks Genie Integration
+12. Zero-Copy Queries, Federation Guardrails & Databricks Genie
 
-Unify AI couples configuration-driven federated queries with **Databricks Genie**:
-- Dedicated **Genie Spaces** configured for business domains (e.g. Customer 360, Supplier Network).
-- Certified semantic metrics and table descriptions provided to Genie's NLU model.
-- Natural Language questions translated to optimized SQL pushdowns against live source catalogs.
-- Zero physical bytes copied to lakehouse storage during querying.
+Unify AI couples configuration-driven federated queries with **Databricks Genie** with built-in federation guardrails:
+- **Dedicated Genie Spaces**: Configured for business domains (e.g. Customer 360, Supplier Network).
+- **Federation Guardrails**: Queries are routed through Certified Semantic Views (`v_semantic_*`) that tie high-frequency join dimensions to conformed Silver keys, preventing API rate limits and execution timeouts on remote systems (like Salesforce or SAP OData).
+- **Certified Semantic Context**: Table glossaries and benchmark queries guide Genie's code generation, guaranteeing deterministic pushdown SQL.
+- **Zero Data Duplication**: External queries execute in-place on remote systems of record without byte copying into Delta Bronze.
 
 ________________________________________
 13. Frontend Architecture (React 19 + TypeScript)

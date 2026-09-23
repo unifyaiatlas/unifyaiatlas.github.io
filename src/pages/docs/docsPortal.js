@@ -58,6 +58,9 @@ export function renderDocsPortalPage(params = {}) {
         <button class="tab-btn ${activeTab === 'mastering' ? 'active' : ''}" onclick="window.unifySwitchDocTab('mastering')">
           👑 Entity Resolution & Graph
         </button>
+        <button class="tab-btn ${activeTab === 'mvp_spec' ? 'active' : ''}" onclick="window.unifySwitchDocTab('mvp_spec')" style="color: var(--secondary);">
+          📋 E2E MVP Task Spec
+        </button>
       </div>
 
       <!-- Tab Content Area -->
@@ -82,6 +85,8 @@ function renderDocTabBody(tab) {
       return renderGenieTab();
     case 'mastering':
       return renderMasteringTab();
+    case 'mvp_spec':
+      return renderMvpSpecTab();
     case 'overview':
     default:
       return renderOverviewTab();
@@ -672,6 +677,115 @@ function renderMasteringTab() {
             └── Parent Enterprise: ORG-812 (Holding Co.)
           </div>
         </div>
+      </div>
+    </div>
+  `;
+}
+
+// E2E MVP Task Specification Tab
+function renderMvpSpecTab() {
+  const epics = [
+    { id: 'EPIC-1', title: 'Workspace & Monorepo Foundation', desc: 'PNPM, Turborepo, @unify/types, @unify/databricks-client SDK wrapper, Docker containerization', tasks: 3, est: 'Week 1', status: 'Approved' },
+    { id: 'EPIC-2', title: 'Databricks Lakebase Active Metastore', desc: 'system.unify_lakebase schema, Delta tables for entities, rules, dynamic layers & audit', tasks: 3, est: 'Week 1', status: 'Approved' },
+    { id: 'EPIC-3', title: 'Ingestion & Federation Connectors', desc: 'SFDC (Bulk v2 + CDC), PostgreSQL (WAL), Kafka (Structured Stream + DLQ), and S3/ADLS Auto Loader', tasks: 6, est: 'Week 2', status: 'Approved' },
+    { id: 'EPIC-4', title: 'Dynamic Layer Spawner Engine', desc: 'State machine & DDL generator for v_bronze, silver, gold_master, and sandbox layers on Serverless SQL', tasks: 3, est: 'Week 2', status: 'Approved' },
+    { id: 'EPIC-5', title: 'Automated Pipeline Synthesis (DABs & DLT)', desc: 'AST compiler synthesizing databricks.yml bundles and Delta Live Tables streaming Python pipelines', tasks: 4, est: 'Week 3', status: 'Approved' },
+    { id: 'EPIC-6', title: 'Data Quality & Profiling Engine', desc: 'Lakehouse Monitoring, Great Expectations assertion compiler, quarantine table stream routing', tasks: 3, est: 'Week 3', status: 'Approved' },
+    { id: 'EPIC-7', title: 'Entity Resolution & Survivorship Engine', desc: 'Deterministic, fuzzy (Jaro-Winkler), and Fellegi-Sunter probabilistic matching with winning survivorship', tasks: 4, est: 'Week 4', status: 'Approved' },
+    { id: 'EPIC-8', title: 'Zero-Copy Queries & Databricks Genie', desc: 'Genie Spaces provisioning, semantic context injection, conversational NL-to-SQL pushdown', tasks: 3, est: 'Week 5', status: 'Approved' },
+    { id: 'EPIC-9', title: 'Entity 360 & Activation Services', desc: 'Sub-10ms GraphQL profile API, identity graph traversal, Kafka CDC events, reverse ETL writeback', tasks: 2, est: 'Week 5', status: 'Approved' },
+    { id: 'EPIC-10', title: 'React 19 + TypeScript Enterprise UI', desc: 'Visual Layer Spawner, Pipeline DAG builder, Data Steward Review Queue, Genie drawer', tasks: 6, est: 'Week 6', status: 'Approved' },
+    { id: 'EPIC-11', title: 'End-to-End Verification & Golden Path Testing', desc: 'Golden Customer journey test with 2M Salesforce + 8M SAP records, Vitest & Playwright suites', tasks: 2, est: 'Week 6', status: 'Approved' }
+  ];
+
+  return `
+    <div class="card" style="padding: 24px;">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--success); font-size: 11px; font-weight: 600; margin-bottom: 6px;">
+            <span>●</span>
+            <span>ENGINEERING IMPLEMENTATION SPECIFICATION v1.0.0-MVP</span>
+          </div>
+          <h3 style="font-family: var(--font-display); font-size: 20px; color: #fff; margin-bottom: 4px;">
+            📋 End-to-End MVP Task Specification & Work Breakdown
+          </h3>
+          <p style="color: var(--text-secondary); font-size: 13.5px; max-width: 850px;">
+            Exhaustive work breakdown structure across 11 epics, covering the entire Customer Domain Unification MVP on Databricks Lakehouse.
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <a href="./e2e_mvp_task_spec.md" target="_blank" class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+            <span>📄 View Raw Markdown Spec</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- 6-Week Sprint Timeline -->
+      <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 18px 20px; margin-bottom: 24px;">
+        <strong style="color: var(--primary-light); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 12px;">
+          🚀 6-Week MVP Delivery Roadmap
+        </strong>
+        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;">
+          <div style="background: #0f172a; padding: 12px; border-radius: 8px; border-left: 3px solid var(--primary);">
+            <div style="font-family: var(--font-mono); font-size: 10.5px; color: var(--primary-light); font-weight: bold;">WEEK 1</div>
+            <div style="color: #fff; font-size: 12px; font-weight: 600; margin-top: 4px;">Monorepo & Lakebase</div>
+            <div style="color: var(--text-muted); font-size: 10.5px; margin-top: 2px;">Epics 1 & 2</div>
+          </div>
+          <div style="background: #0f172a; padding: 12px; border-radius: 8px; border-left: 3px solid var(--secondary);">
+            <div style="font-family: var(--font-mono); font-size: 10.5px; color: var(--secondary); font-weight: bold;">WEEK 2</div>
+            <div style="color: #fff; font-size: 12px; font-weight: 600; margin-top: 4px;">Federation & Layer Spawner</div>
+            <div style="color: var(--text-muted); font-size: 10.5px; margin-top: 2px;">Epics 3 & 4</div>
+          </div>
+          <div style="background: #0f172a; padding: 12px; border-radius: 8px; border-left: 3px solid #a855f7;">
+            <div style="font-family: var(--font-mono); font-size: 10.5px; color: #a855f7; font-weight: bold;">WEEK 3</div>
+            <div style="color: #fff; font-size: 12px; font-weight: 600; margin-top: 4px;">Automated Pipelines & DQ</div>
+            <div style="color: var(--text-muted); font-size: 10.5px; margin-top: 2px;">Epics 5 & 6</div>
+          </div>
+          <div style="background: #0f172a; padding: 12px; border-radius: 8px; border-left: 3px solid var(--warning);">
+            <div style="font-family: var(--font-mono); font-size: 10.5px; color: var(--warning); font-weight: bold;">WEEK 4</div>
+            <div style="color: #fff; font-size: 12px; font-weight: 600; margin-top: 4px;">Entity Resolution & Surv.</div>
+            <div style="color: var(--text-muted); font-size: 10.5px; margin-top: 2px;">Epic 7</div>
+          </div>
+          <div style="background: #0f172a; padding: 12px; border-radius: 8px; border-left: 3px solid #ec4899;">
+            <div style="font-family: var(--font-mono); font-size: 10.5px; color: #ec4899; font-weight: bold;">WEEK 5</div>
+            <div style="color: #fff; font-size: 12px; font-weight: 600; margin-top: 4px;">Genie Zero-Copy & 360</div>
+            <div style="color: var(--text-muted); font-size: 10.5px; margin-top: 2px;">Epics 8 & 9</div>
+          </div>
+          <div style="background: #0f172a; padding: 12px; border-radius: 8px; border-left: 3px solid var(--success);">
+            <div style="font-family: var(--font-mono); font-size: 10.5px; color: var(--success); font-weight: bold;">WEEK 6</div>
+            <div style="color: #fff; font-size: 12px; font-weight: 600; margin-top: 4px;">React UI & Golden Path</div>
+            <div style="color: var(--text-muted); font-size: 10.5px; margin-top: 2px;">Epics 10 & 11</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Epics Grid -->
+      <h4 style="color: #fff; font-size: 16px; margin-bottom: 14px;">The 11 Core Engineering Epics</h4>
+      <div class="grid-2">
+        ${epics.map(e => `
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <span style="font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; color: var(--primary-light);">${e.id}</span>
+              <span class="badge badge-neutral" style="font-size: 10px;">${e.est} • ${e.tasks} Tasks</span>
+            </div>
+            <strong style="color: #fff; font-size: 13.5px; display: block; margin-bottom: 4px;">${e.title}</strong>
+            <p style="color: var(--text-secondary); font-size: 12px; line-height: 1.5;">${e.desc}</p>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- Definition of Done Checklist -->
+      <div style="margin-top: 24px; padding: 18px 20px; background: rgba(99, 102, 241, 0.08); border-left: 4px solid var(--primary); border-radius: 0 10px 10px 0;">
+        <strong style="color: #fff; font-size: 14px;">Definition of Done (DoD) for MVP:</strong>
+        <ul style="margin: 8px 0 0 18px; font-size: 12.5px; color: #cbd5e1; line-height: 1.7;">
+          <li>✓ <strong>Zero Data Replication</strong>: Raw data federated via Unity Catalog without bulk replication into Lakehouse Delta storage.</li>
+          <li>✓ <strong>Lakebase as Metastore</strong>: All models, dynamic layers, and match rules read/written to <code>system.unify_lakebase</code>.</li>
+          <li>✓ <strong>Automated Dynamic Layer Spawner</strong>: <code>v_bronze</code>, <code>silver</code>, <code>gold_master</code>, and <code>sandbox</code> layers spawned via Serverless SQL on demand.</li>
+          <li>✓ <strong>Automated Pipeline Synthesis</strong>: Visual DAG compiled into Databricks Asset Bundle (DAB) and deployed to Delta Live Tables (DLT).</li>
+          <li>✓ <strong>Zero-Copy Genie Queries</strong>: Databricks Genie executes pushdown queries against live sources with 0 bytes lakehouse storage.</li>
+          <li>✓ <strong>Type Safety</strong>: 100% TypeScript coverage across all 8 microservices and React 19 frontend.</li>
+        </ul>
       </div>
     </div>
   `;
