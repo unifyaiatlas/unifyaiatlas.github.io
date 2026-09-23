@@ -8,6 +8,7 @@ import { store, goldenJourneySteps } from '../state/store.js';
 export function renderAppShell() {
   return `
     <div id="app">
+      <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="window.unifyToggleMobileSidebar(false)"></div>
       <div id="sidebar-container">${renderSidebar()}</div>
       
       <main class="app-main">

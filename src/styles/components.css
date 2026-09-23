@@ -493,3 +493,96 @@
 .bar-fill-success { background: var(--success); }
 .bar-fill-warning { background: var(--warning); }
 .bar-fill-ai { background: linear-gradient(90deg, #a855f7, #6366f1); }
+
+/* Mobile Component Responsive Overrides */
+@media (max-width: 768px) {
+  .grid-2, .grid-3 {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .kpi-card {
+    padding: 12px;
+  }
+
+  .kpi-value {
+    font-size: 19px;
+  }
+
+  .kpi-label {
+    font-size: 10px;
+  }
+
+  .wizard-stepper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    padding: 10px 14px;
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  .wizard-step {
+    flex-shrink: 0;
+    font-size: 11px;
+  }
+
+  .step-divider {
+    min-width: 14px;
+    margin: 0 4px;
+  }
+
+  .tabs-nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    margin-bottom: 14px;
+  }
+
+  .tab-btn {
+    flex-shrink: 0;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .table-toolbar input,
+  .table-toolbar select {
+    width: 100% !important;
+  }
+
+  .modal-content {
+    width: 95vw;
+    max-width: 95vw;
+    margin: 10px;
+  }
+
+  .data-table-container {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 9px 10px;
+    font-size: 11.5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}

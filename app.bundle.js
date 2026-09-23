@@ -1056,7 +1056,7 @@ function renderSidebar() {
       const isActive = currentRoute === it.route || (it.route !== '#/' && currentRoute.startsWith(it.route));
       const badgeHtml = it.badge ? `<span class="nav-link-badge ${it.badgeClass || ''}">${it.badge}</span>` : '';
       return `
-        <a href="${it.route}" class="nav-link ${isActive ? 'active' : ''}">
+        <a href="${it.route}" class="nav-link ${isActive ? 'active' : ''}" onclick="window.unifyToggleMobileSidebar(false)">
           <span>${it.label}</span>
           ${badgeHtml}
         </a>
@@ -1082,9 +1082,9 @@ function renderSidebar() {
   });
 
   return `
-    <aside class="app-sidebar">
+    <aside class="app-sidebar" id="app-sidebar">
       <div class="sidebar-header">
-        <a href="#/" class="brand-logo">
+        <a href="#/" class="brand-logo" onclick="window.unifyToggleMobileSidebar(false)">
           <div class="brand-icon">U</div>
           <div>
             <div class="brand-title">UNIFY AI</div>
@@ -1092,6 +1092,7 @@ function renderSidebar() {
           </div>
         </a>
         <span class="brand-badge" style="margin-left: auto;">v3.0</span>
+        <button class="btn btn-ghost btn-sm mobile-close-btn" onclick="window.unifyToggleMobileSidebar(false)" style="margin-left: 4px; padding: 2px 6px; font-size: 14px;" aria-label="Close Navigation">✕</button>
       </div>
 
       <nav class="sidebar-nav">
@@ -1129,6 +1130,14 @@ function renderTopbar() {
   return `
     <header class="app-topbar">
       <div class="topbar-left">
+        <button class="mobile-nav-toggle" onclick="window.unifyToggleMobileSidebar()" aria-label="Open Navigation Menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+
         <div class="env-pill" title="Connected to Zero-Copy Fabric">
           <span class="env-dot"></span>
           <span>PROD / AWS us-east-1</span>
@@ -1303,6 +1312,7 @@ function renderGlobalSearch() {
 function renderAppShell() {
   return `
     <div id="app">
+      <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="window.unifyToggleMobileSidebar(false)"></div>
       <div id="sidebar-container">${renderSidebar()}</div>
       
       <main class="app-main">
@@ -5743,6 +5753,21 @@ router
   .addRoute('/admin/settings', renderSettingsPage);
 
 // Global Interactivity Bindings
+window.unifyToggleMobileSidebar = (forceState) => {
+  const sidebar = document.querySelector('.app-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (!sidebar) return;
+
+  const isOpen = typeof forceState === 'boolean' ? forceState : !sidebar.classList.contains('mobile-open');
+  if (isOpen) {
+    sidebar.classList.add('mobile-open');
+    if (backdrop) backdrop.classList.add('open');
+  } else {
+    sidebar.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('open');
+  }
+};
+
 window.unifyToggleAiDrawer = (open) => {
   store.toggleAiDrawer(open);
 };

@@ -8,6 +8,14 @@ export function renderTopbar() {
   return `
     <header class="app-topbar">
       <div class="topbar-left">
+        <button class="mobile-nav-toggle" onclick="window.unifyToggleMobileSidebar()" aria-label="Open Navigation Menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+
         <div class="env-pill" title="Connected to Zero-Copy Fabric">
           <span class="env-dot"></span>
           <span>PROD / AWS us-east-1</span>

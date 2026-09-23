@@ -121,7 +121,7 @@ export function renderSidebar() {
       const isActive = currentRoute === it.route || (it.route !== '#/' && currentRoute.startsWith(it.route));
       const badgeHtml = it.badge ? `<span class="nav-link-badge ${it.badgeClass || ''}">${it.badge}</span>` : '';
       return `
-        <a href="${it.route}" class="nav-link ${isActive ? 'active' : ''}">
+        <a href="${it.route}" class="nav-link ${isActive ? 'active' : ''}" onclick="window.unifyToggleMobileSidebar(false)">
           <span>${it.label}</span>
           ${badgeHtml}
         </a>
@@ -147,9 +147,9 @@ export function renderSidebar() {
   });
 
   return `
-    <aside class="app-sidebar">
+    <aside class="app-sidebar" id="app-sidebar">
       <div class="sidebar-header">
-        <a href="#/" class="brand-logo">
+        <a href="#/" class="brand-logo" onclick="window.unifyToggleMobileSidebar(false)">
           <div class="brand-icon">U</div>
           <div>
             <div class="brand-title">UNIFY AI</div>
@@ -157,6 +157,7 @@ export function renderSidebar() {
           </div>
         </a>
         <span class="brand-badge" style="margin-left: auto;">v3.0</span>
+        <button class="btn btn-ghost btn-sm mobile-close-btn" onclick="window.unifyToggleMobileSidebar(false)" style="margin-left: 4px; padding: 2px 6px; font-size: 14px;" aria-label="Close Navigation">✕</button>
       </div>
 
       <nav class="sidebar-nav">

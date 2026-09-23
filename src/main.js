@@ -119,6 +119,21 @@ router
   .addRoute('/admin/settings', renderSettingsPage);
 
 // Global Interactivity Bindings
+window.unifyToggleMobileSidebar = (forceState) => {
+  const sidebar = document.querySelector('.app-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (!sidebar) return;
+
+  const isOpen = typeof forceState === 'boolean' ? forceState : !sidebar.classList.contains('mobile-open');
+  if (isOpen) {
+    sidebar.classList.add('mobile-open');
+    if (backdrop) backdrop.classList.add('open');
+  } else {
+    sidebar.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('open');
+  }
+};
+
 window.unifyToggleAiDrawer = (open) => {
   store.toggleAiDrawer(open);
 };
