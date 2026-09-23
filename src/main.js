@@ -61,12 +61,17 @@ import { renderLoginPage } from './pages/auth/login.js';
 import { renderRegisterPage } from './pages/auth/register.js';
 import { renderForgotPasswordPage } from './pages/auth/forgotPassword.js';
 
+// Architecture & Documentation Portal
+import { renderDocsPortalPage } from './pages/docs/docsPortal.js';
+
 // Setup Global Route Map (Section 50)
 router
   .addRoute('/login', renderLoginPage)
   .addRoute('/register', renderRegisterPage)
   .addRoute('/forgot-password', renderForgotPasswordPage)
   .addRoute('/', renderOverviewPage)
+  .addRoute('/docs', renderDocsPortalPage)
+  .addRoute('/docs/:tab', renderDocsPortalPage)
   // Data Foundation
   .addRoute('/data-foundation/sources', renderSourcesPage)
   .addRoute('/data-foundation/sources/new', renderAddSourcePage)

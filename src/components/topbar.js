@@ -40,6 +40,12 @@ export function renderTopbar() {
           </select>
         </div>
 
+        <!-- Architecture & Documentation Portal Link -->
+        <a href="#/docs" class="btn btn-outline btn-sm" title="View Technical Architecture & Documentation" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; border-color: rgba(99, 102, 241, 0.4); color: var(--primary-light);">
+          <span>📖</span>
+          <span>Docs</span>
+        </a>
+
         <!-- Global AI Assistant Trigger (Section 4) -->
         <button class="btn btn-ai btn-sm" onclick="window.unifyToggleAiDrawer()" title="Open Unify AI Assistant">
           <span>✦</span>

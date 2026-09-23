@@ -16,6 +16,18 @@ export function renderSidebar() {
       ]
     },
     {
+      group: 'Architecture & Docs',
+      icon: '📖',
+      items: [
+        { label: 'System Blueprints', route: '#/docs', badge: 'v3.2' },
+        { label: 'TypeScript Services', route: '#/docs?tab=microservices', badge: '8' },
+        { label: 'Lakebase Metastore', route: '#/docs?tab=lakebase' },
+        { label: 'Layer Spawner', route: '#/docs?tab=layers' },
+        { label: 'Automated Pipelines', route: '#/docs?tab=pipelines' },
+        { label: 'Databricks Genie', route: '#/docs?tab=genie' }
+      ]
+    },
+    {
       group: 'Data Foundation',
       icon: '🏛️',
       items: [

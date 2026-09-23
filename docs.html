@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unify AI — Architecture & End-to-End Documentation Portal</title>
+  <meta name="description" content="Technical documentation and architecture specifications for Unify AI: Zero-Copy Data Unification Fabric on Databricks with TypeScript Microservices, Lakebase Metastore, Dynamic Layer Spawning, Automated Pipelines, and Databricks Genie.">
+
+  <!-- Enterprise Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Mermaid.js for Dynamic Architecture Diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+
+  <style>
+    :root {
+      --bg-canvas: #090d16;
+      --bg-surface: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --bg-card-hover: rgba(51, 65, 85, 0.8);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(99, 102, 241, 0.35);
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --primary-glow: rgba(99, 102, 241, 0.25);
+      --secondary: #06b6d4;
+      --secondary-glow: rgba(6, 182, 212, 0.2);
+      --accent: #a855f7;
+      --accent-glow: rgba(168, 85, 247, 0.2);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-display: 'Outfit', sans-serif;
+      --font-mono: 'Fira Code', monospace;
+      --sidebar-width: 290px;
+      --topbar-height: 64px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 60%, rgba(6, 182, 212, 0.08) 0%, transparent 45%),
+        radial-gradient(circle at 50% 90%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    /* Layout */
+    .docs-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Fixed Left Sidebar */
+    .docs-sidebar {
+      width: var(--sidebar-width);
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(16px);
+      border-right: 1px solid var(--border-subtle);
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 50;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .docs-sidebar-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-family: var(--font-display);
+      font-size: 18px;
+      color: #fff;
+      box-shadow: 0 4px 16px var(--primary-glow);
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 16px;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .docs-nav {
+      padding: 16px 12px;
+      flex: 1;
+    }
+
+    .nav-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 14px 12px 6px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+
+    .nav-item:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+      transform: translateX(2px);
+    }
+
+    .nav-item.active {
+      color: #fff;
+      background: var(--primary-glow);
+      border-left: 3px solid var(--primary);
+      font-weight: 600;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(99, 102, 241, 0.2);
+      color: var(--primary-light);
+      font-family: var(--font-mono);
+    }
+
+    /* Main Content Area */
+    .docs-main {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Sticky Header */
+    .docs-header {
+      height: var(--topbar-height);
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 36px;
+    }
+
+    .docs-search {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 6px 14px;
+      width: 380px;
+    }
+
+    .docs-search input {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+      width: 100%;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #4f46e5);
+      color: #fff;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    /* Content Body */
+    .docs-body {
+      padding: 48px 64px 96px;
+      max-width: 1320px;
+    }
+
+    /* Hero Section */
+    .docs-hero {
+      margin-bottom: 56px;
+      position: relative;
+    }
+
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid var(--border-accent);
+      color: var(--primary-light);
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      letter-spacing: 0.02em;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: 42px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 17px;
+      color: var(--text-secondary);
+      max-width: 860px;
+      line-height: 1.7;
+    }
+
+    /* Cards & Containers */
+    .doc-section {
+      margin-bottom: 64px;
+      scroll-margin-top: 80px;
+    }
+
+    .section-title-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 12px;
+    }
+
+    .section-num {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      color: var(--primary-light);
+      font-weight: 600;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 28px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    /* Diagram Viewer Card */
+    .diagram-card {
+      background: #0b1120;
+      border: 1px solid var(--border-accent);
+      border-radius: 14px;
+      padding: 24px;
+      margin: 24px 0;
+      position: relative;
+      overflow-x: auto;
+    }
+
+    .diagram-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .diagram-title {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mermaid {
+      background: transparent;
+      display: flex;
+      justify-content: center;
+      padding: 16px 0;
+    }
+
+    /* Code Blocks */
+    pre code {
+      display: block;
+      background: #090e1a;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 18px 20px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: #e2e8f0;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+
+    .code-comment { color: #64748b; font-style: italic; }
+    .code-keyword { color: #a855f7; font-weight: 600; }
+    .code-type { color: #38bdf8; }
+    .code-string { color: #34d399; }
+    .code-func { color: #fbbf24; }
+
+    /* Interactive Simulators */
+    .sim-box {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+      border: 1px solid var(--border-accent);
+      border-radius: 14px;
+      padding: 28px;
+      margin-top: 24px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+    }
+
+    .sim-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .sim-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--success);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 12px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .form-control, .form-select {
+      width: 100%;
+      background: #090e1a;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #fff;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    /* Microservice Box */
+    .service-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.2s ease;
+    }
+
+    .service-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-2px);
+    }
+
+    .service-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .service-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--primary-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+
+    .service-name {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .service-desc {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .service-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      font-size: 10.5px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    /* Tables */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+
+    .spec-table th {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-subtle);
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .spec-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    .spec-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+      color: #fff;
+    }
+
+    /* Step flow */
+    .flow-steps {
+      display: flex;
+      gap: 12px;
+      margin: 20px 0;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+
+    .flow-step-item {
+      flex: 1;
+      min-width: 160px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 14px;
+      position: relative;
+    }
+
+    .flow-step-item::after {
+      content: '→';
+      position: absolute;
+      right: -10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-weight: bold;
+    }
+
+    .flow-step-item:last-child::after {
+      display: none;
+    }
+
+    .step-num {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--primary-light);
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .step-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .step-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Alert callouts */
+    .callout {
+      border-left: 4px solid var(--primary);
+      background: rgba(99, 102, 241, 0.08);
+      padding: 16px 20px;
+      border-radius: 0 10px 10px 0;
+      margin: 20px 0;
+      font-size: 13.5px;
+      color: #cbd5e1;
+    }
+
+    .callout-title {
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .docs-sidebar { transform: translateX(-100%); transition: transform 0.25s ease; }
+      .docs-sidebar.open { transform: translateX(0); }
+      .docs-main { margin-left: 0; }
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      .docs-body { padding: 24px 20px; }
+      .hero-title { font-size: 32px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="docs-container">
+    <!-- Left Navigation Sidebar -->
+    <aside class="docs-sidebar" id="docs-sidebar">
+      <div class="docs-sidebar-header">
+        <div class="brand-icon">U</div>
+        <div>
+          <div class="brand-title">UNIFY AI DOCS</div>
+          <div class="brand-sub">Databricks Architecture</div>
+        </div>
+      </div>
+
+      <nav class="docs-nav">
+        <div class="nav-section-title">Core Architecture</div>
+        <a class="nav-item active" href="#executive-architecture" onclick="setActiveNav(this)">
+          <span>🏛️</span>
+          <span>Executive Architecture</span>
+        </a>
+        <a class="nav-item" href="#databricks-dataplane" onclick="setActiveNav(this)">
+          <span>⚡</span>
+          <span>Databricks Data Plane</span>
+        </a>
+        <a class="nav-item" href="#typescript-microservices" onclick="setActiveNav(this)">
+          <span>🧩</span>
+          <span>TypeScript Microservices</span>
+          <span class="nav-badge">8 Services</span>
+        </a>
+        <a class="nav-item" href="#frontend-architecture" onclick="setActiveNav(this)">
+          <span>⚛️</span>
+          <span>React + TS Frontend</span>
+        </a>
+
+        <div class="nav-section-title">Databricks Core Engines</div>
+        <a class="nav-item" href="#lakebase-metastore" onclick="setActiveNav(this)">
+          <span>🗄️</span>
+          <span>Lakebase Metastore</span>
+        </a>
+        <a class="nav-item" href="#layer-spawner" onclick="setActiveNav(this)">
+          <span>🏗️</span>
+          <span>Dynamic Layer Spawner</span>
+          <span class="nav-badge">Interactive</span>
+        </a>
+        <a class="nav-item" href="#automated-pipelines" onclick="setActiveNav(this)">
+          <span>🔄</span>
+          <span>Automated Pipelines</span>
+          <span class="nav-badge">DLT + DABs</span>
+        </a>
+        <a class="nav-item" href="#genie-zerocopy" onclick="setActiveNav(this)">
+          <span>🔮</span>
+          <span>Databricks Genie & Zero-Copy</span>
+          <span class="nav-badge">Interactive</span>
+        </a>
+
+        <div class="nav-section-title">Mastering & Governance</div>
+        <a class="nav-item" href="#entity-mastering" onclick="setActiveNav(this)">
+          <span>👑</span>
+          <span>Entity Resolution & Graph</span>
+        </a>
+        <a class="nav-item" href="#lineage-governance" onclick="setActiveNav(this)">
+          <span>🛡️</span>
+          <span>Unity Catalog Lineage & DQ</span>
+        </a>
+
+        <div class="nav-section-title">Quick Actions</div>
+        <a class="nav-item" href="./index.html" style="color: var(--secondary);">
+          <span>🚀</span>
+          <span>Launch Live App UI</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="docs-main">
+      <!-- Top Sticky Header -->
+      <header class="docs-header">
+        <div class="docs-search">
+          <span style="color: var(--text-muted);">🔍</span>
+          <input type="text" id="docSearchInput" placeholder="Search architecture, APIs, TypeScript contracts..." onkeyup="filterDocContent(this.value)">
+        </div>
+
+        <div class="header-actions">
+          <a href="./index.html" class="btn btn-outline">
+            <span>← Back to Application</span>
+          </a>
+          <a href="#layer-spawner-sim" class="btn btn-primary">
+            <span>⚡ Test Layer Spawner</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Documentation Body -->
+      <div class="docs-body">
+
+        <!-- Hero Section -->
+        <section class="docs-hero">
+          <div class="hero-pill">
+            <span>✦</span>
+            <span>ENTERPRISE SPECIFICATION v3.2 • ZERO-COPY UNIFICATION FABRIC</span>
+          </div>
+          <h1 class="hero-title">Unify AI on Databricks</h1>
+          <p class="hero-desc">
+            Next-generation enterprise Zero-Copy Data Unification Fabric powered by Databricks Lakehouse. 
+            Built with <strong>TypeScript microservices</strong>, <strong>React + TypeScript UI</strong>, 
+            <strong>Databricks Lakebase</strong> as the active metastore, dynamic <strong>Layer Spawning</strong>, 
+            automated <strong>DLT/DABs pipelines</strong>, and configuration-driven <strong>Zero-Copy Queries via Databricks Genie</strong>.
+          </p>
+        </section>
+
+        <!-- Chapter 1: Executive Architecture -->
+        <section class="doc-section" id="executive-architecture">
+          <div class="section-title-wrap">
+            <span class="section-num">01</span>
+            <h2 class="section-title">Executive End-to-End Architecture</h2>
+          </div>
+
+          <div class="card">
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+              Unify AI sits on top of Databricks to bridge heterogeneous enterprise data sources without forced physical duplication.
+              Source systems remain authoritative systems of record, while Databricks provides the intelligent lakehouse processing, 
+              identity graph storage, and real-time zero-copy querying.
+            </p>
+
+            <div class="diagram-card">
+              <div class="diagram-header">
+                <span class="diagram-title"><span>📊</span> ARCHITECTURE DIAGRAM 1: END-TO-END FABRIC COMPONENT TOPOLOGY</span>
+                <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">Mermaid Dynamic SVG</span>
+              </div>
+              <div class="mermaid">
+flowchart TB
+    subgraph SOURCES["ENTERPRISE DATA SOURCES (Systems of Record)"]
+        SFDC["Salesforce CRM<br/>(Sales/Service Cloud)"]
+        SAP["SAP S/4HANA ERP<br/>(Customer/Vendor)"]
+        PG["PostgreSQL / Oracle<br/>(Transactional DBs)"]
+        SNOW["Snowflake / Lakes<br/>(Analytical Marts)"]
+        KAFKA["Kafka / CDC Streams<br/>(Event Feeds)"]
+    end
+
+    subgraph ACCESS["ZERO-COPY INGESTION & FEDERATION LAYER"]
+        FED["Unity Catalog Lakehouse Federation<br/>(Zero-Copy Virtual Foreign Catalogs)"]
+        DS["Delta Sharing Protocol<br/>(Zero-Copy External Sharing)"]
+        AL["Databricks Auto Loader<br/>(Schema Evolution Streaming)"]
+    end
+
+    subgraph METASTORE["DATABRICKS LAKEBASE METASTORE (active system.unify_lakebase)"]
+        UC_CAT["Catalog & Schema Registry"]
+        UC_CONF["Entity & Attribute Models"]
+        UC_RULES["DQ & Survivorship Matrices"]
+        UC_LINEAGE["Column-Level Lineage & Audit"]
+    end
+
+    subgraph TS_SERVICES["CONTROL PLANE: TYPESCRIPT MICROSERVICES (Node.js/Fastify/tRPC)"]
+        SVC_FED["source-federation-service"]
+        SVC_META["lakebase-metastore-service"]
+        SVC_SPAWN["layer-spawner-service"]
+        SVC_PIPE["pipeline-orchestrator-service"]
+        SVC_DQ["dq-intelligence-service"]
+        SVC_UNIF["unification-engine-service"]
+        SVC_GENIE["genie-zerocopy-query-service"]
+        SVC_360["entity360-activation-service"]
+    end
+
+    subgraph DATAPLANE["DATABRICKS DATA PLANE (Compute & Storage)"]
+        BRONZE["Virtual Bronze Layer (v_bronze)<br/>Zero-Copy External Views"]
+        SILVER["Conformed Silver Layer (silver)<br/>Cleansed & Conformed Delta"]
+        GOLD["Golden Mastering Layer (gold)<br/>Master Records & Identity Graph"]
+        GENIE["Databricks Genie Space<br/>(Natural Language to Zero-Copy SQL)"]
+    end
+
+    subgraph FRONTEND["PRESENTATION LAYER (React 19 + TypeScript)"]
+        UI_SHELL["Enterprise App Shell & Router"]
+        UI_SPAWNER["Visual Layer Spawner UI"]
+        UI_STEWARD["Data Steward Resolution Queue"]
+        UI_GENIE["Conversational Genie Copilot"]
+    end
+
+    SOURCES -->|Zero-Copy Federation / Streaming| ACCESS
+    ACCESS --> DATAPLANE
+    TS_SERVICES <-->|Active DDL & REST APIs| METASTORE
+    TS_SERVICES -->|Spark Jobs / SQL Execution API| DATAPLANE
+    FRONTEND <-->|tRPC & Type-Safe REST APIs| TS_SERVICES
+    GENIE -->|Direct Zero-Copy Query Pushdown| BRONZE
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chapter 2: Databricks Data Plane & Dynamic Layers -->
+        <section class="doc-section" id="databricks-dataplane">
+          <div class="section-title-wrap">
+            <span class="section-num">02</span>
+            <h2 class="section-title">Databricks Data Plane & Lakehouse Architecture</h2>
+          </div>
+
+          <div class="card">
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+              The Databricks Data Plane executes all compute-intensive workloads using <strong>Serverless SQL Warehouses</strong> 
+              and <strong>Spark Structured Streaming</strong>. The architecture fundamentally decouples the logical semantic layers from 
+              physical storage replication.
+            </p>
+
+            <div class="diagram-card">
+              <div class="diagram-header">
+                <span class="diagram-title"><span>⚡</span> ARCHITECTURE DIAGRAM 2: DATABRICKS MULTI-LAYER EXECUTION TOPOLOGY</span>
+              </div>
+              <div class="mermaid">
+flowchart LR
+    subgraph ZERO_COPY["1. Virtual Bronze (Zero-Copy)"]
+        V_SF["v_bronze_salesforce_account<br/>(External Federated View)"]
+        V_SAP["v_bronze_sap_kna1<br/>(External Federated View)"]
+        V_BILL["v_bronze_postgres_invoices<br/>(External Federated View)"]
+    end
+
+    subgraph SILVER_STAGE["2. Conformed Silver Layer"]
+        S_CUST["silver_customer_conformed<br/>• Standardized Schema<br/>• Cleansed Address/Email<br/>• Quality Assertion Flags"]
+    end
+
+    subgraph GOLD_STAGE["3. Golden Master Layer"]
+        G_ENT["gold_golden_customer<br/>• Unique Golden ID<br/>• Survived Winning Attributes<br/>• Temporal Validity Matrix"]
+        G_XREF["gold_entity_xref<br/>• Source Pointers<br/>• Confidence Scores"]
+        G_GRAPH["gold_identity_graph<br/>• Graph Nodes & Edges"]
+    end
+
+    subgraph ACTIVATION["4. Activation & Consumption"]
+        PROD_API["Real-time Entity 360 APIs"]
+        GENIE_NL["Databricks Genie NL Space"]
+        REVERSE_ETL["Salesforce / SAP Writeback"]
+    end
+
+    ZERO_COPY -->|Delta Live Tables Pipeline| SILVER_STAGE
+    SILVER_STAGE -->|Spark Fellegi-Sunter & Graph| GOLD_STAGE
+    GOLD_STAGE --> ACTIVATION
+    V_SF -.->|Direct Virtual Pushdown| GENIE_NL
+              </div>
+            </div>
+
+            <div class="grid-3" style="margin-top: 24px;">
+              <div class="service-card">
+                <div class="service-header">
+                  <div class="service-icon">🌐</div>
+                  <div class="service-name">Virtual Bronze (Zero-Copy)</div>
+                </div>
+                <div class="service-desc">
+                  SQL views created against Unity Catalog Foreign Connections. Queries push predicates and projections directly down to Salesforce, Snowflake, or SAP without bytes moving into Delta Lake.
+                </div>
+                <div class="service-tags">
+                  <span class="tag">CREATE VIEW</span>
+                  <span class="tag">Lakehouse Federation</span>
+                  <span class="tag">Pushdown</span>
+                </div>
+              </div>
+
+              <div class="service-card">
+                <div class="service-header">
+                  <div class="service-icon">✨</div>
+                  <div class="service-name">Conformed Silver</div>
+                </div>
+                <div class="service-desc">
+                  Delta Lake tables containing canonical standardized structures. Attributes conform to ISO formats (phone, address, names) with Great Expectations quality assertions applied during streaming.
+                </div>
+                <div class="service-tags">
+                  <span class="tag">Delta Lake</span>
+                  <span class="tag">Streaming DLT</span>
+                  <span class="tag">Schema Evolution</span>
+                </div>
+              </div>
+
+              <div class="service-card">
+                <div class="service-header">
+                  <div class="service-icon">👑</div>
+                  <div class="service-name">Golden Master (Gold)</div>
+                </div>
+                <div class="service-desc">
+                  The mastered identity store containing survived single-source-of-truth golden entities, identity cross-references (XREF), confidence vectors, and graph edges.
+                </div>
+                <div class="service-tags">
+                  <span class="tag">Delta MERGE</span>
+                  <span class="tag">Identity Graph</span>
+                  <span class="tag">Audit Lineage</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chapter 3: TypeScript Microservices Architecture -->
+        <section class="doc-section" id="typescript-microservices">
+          <div class="section-title-wrap">
+            <span class="section-num">03</span>
+            <h2 class="section-title">TypeScript Microservices Architecture & Contracts</h2>
+          </div>
+
+          <div class="card">
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+              The entire Unify AI Control Plane is implemented in <strong>TypeScript</strong> for maximum type-safety, 
+              developer ergonomics, and seamless JSON/REST/tRPC integration. The microservices run as containerized services 
+              (Node.js / Fastify / tRPC) on Databricks Apps or Kubernetes, communicating with Databricks via the official 
+              Databricks REST API, SQL Execution API, and Unity Catalog SDK.
+            </p>
+
+            <div class="diagram-card">
+              <div class="diagram-header">
+                <span class="diagram-title"><span>🧩</span> ARCHITECTURE DIAGRAM 3: TYPESCRIPT MICROSERVICES INTERACTION MATRIX</span>
+              </div>
+              <div class="mermaid">
+flowchart TD
+    subgraph CLIENT["Frontend Clients"]
+        REACT["React 19 + TypeScript SPA"]
+        CLI["Unify CLI / Automation Scripts"]
+    end
+
+    subgraph API_GATEWAY["API Gateway & Auth Proxy (Fastify / TypeScript)"]
+        GW["Unify API Gateway<br/>• JWT / OAuth2 Auth<br/>• Request Rate Limiting<br/>• Route Dispatcher"]
+    end
+
+    subgraph MICROSERVICES["TypeScript Microservices Cluster"]
+        S1["source-federation-service<br/>:4001"]
+        S2["lakebase-metastore-service<br/>:4002"]
+        S3["layer-spawner-service<br/>:4003"]
+        S4["pipeline-orchestrator-service<br/>:4004"]
+        S5["dq-intelligence-service<br/>:4005"]
+        S6["unification-engine-service<br/>:4006"]
+        S7["genie-zerocopy-query-service<br/>:4007"]
+        S8["entity360-activation-service<br/>:4008"]
+    end
+
+    subgraph DB_BACKEND["Databricks Platform Infrastructure"]
+        UC["Databricks Unity Catalog<br/>(Lakebase Metastore Tables)"]
+        SQL_EXEC["Databricks Serverless SQL Execution API"]
+        JOBS_API["Databricks Jobs & DLT REST API"]
+        GENIE_API["Databricks Genie API"]
+    end
+
+    CLIENT --> GW
+    GW --> S1 & S2 & S3 & S4 & S5 & S6 & S7 & S8
+
+    S2 <-->|Metadata CRUD| UC
+    S3 -->|DDL Execution| SQL_EXEC
+    S4 -->|Deploy DABs / Trigger DLT| JOBS_API
+    S7 -->|Execute Pushdown & NL Query| GENIE_API & SQL_EXEC
+    S6 -->|Run Spark Master Job| SQL_EXEC
+              </div>
+            </div>
+
+            <!-- Microservices Breakdown Table -->
+            <h3 style="color: #fff; font-size: 18px; margin: 32px 0 16px;">The 8 Core TypeScript Microservices</h3>
+            
+            <table class="spec-table">
+              <thead>
+                <tr>
+                  <th>Microservice Name</th>
+                  <th>Primary Responsibility</th>
+                  <th>Databricks Integrations</th>
+                  <th>Key TypeScript Interfaces</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>source-federation-service</code></td>
+                  <td>Manages zero-copy connections, virtual catalogs, JDBC federations, and Delta Sharing.</td>
+                  <td>Unity Catalog Foreign Connections, Storage Credentials</td>
+                  <td><code>SourceConnectionConfig</code>, <code>VirtualCatalogSpec</code></td>
+                </tr>
+                <tr>
+                  <td><code>lakebase-metastore-service</code></td>
+                  <td>Active control plane metastore storing entity models, schema definitions, and rule matrices in Lakebase.</td>
+                  <td>Lakebase Delta tables (<code>system.unify_lakebase</code>)</td>
+                  <td><code>CanonicalEntityModel</code>, <code>AttributeMapping</code>, <code>RuleDefinition</code></td>
+                </tr>
+                <tr>
+                  <td><code>layer-spawner-service</code></td>
+                  <td>Dynamically spawns, provisions, and manages database layers (v_bronze, silver, gold, sandbox) in Databricks.</td>
+                  <td>Databricks SQL Execution API (DDL generation)</td>
+                  <td><code>SpawnLayerRequest</code>, <code>LayerProvisionResult</code>, <code>LayerMetadata</code></td>
+                </tr>
+                <tr>
+                  <td><code>pipeline-orchestrator-service</code></td>
+                  <td>Automated end-to-end pipeline synthesis (DABs, DLT pipelines, Structured Streaming jobs).</td>
+                  <td>Databricks Asset Bundles (DABs), DLT REST API</td>
+                  <td><code>PipelineDagConfig</code>, <code>DltPipelineSpec</code>, <code>JobRunTelemetry</code></td>
+                </tr>
+                <tr>
+                  <td><code>dq-intelligence-service</code></td>
+                  <td>Automated profiling, anomaly detection, Great Expectations assertions, and quality scoring.</td>
+                  <td>Databricks Lakehouse Monitoring, Delta Expectations</td>
+                  <td><code>DqRuleSpec</code>, <code>ProfilingMetric</code>, <code>DqIssueAlert</code></td>
+                </tr>
+                <tr>
+                  <td><code>unification-engine-service</code></td>
+                  <td>Deterministic, fuzzy, probabilistic (Fellegi-Sunter), and AI matching with survivorship calculations.</td>
+                  <td>Spark GraphX / Delta MERGE SQL scripts</td>
+                  <td><code>MatchStrategy</code>, <code>SurvivorshipMatrix</code>, <code>GoldenCluster</code></td>
+                </tr>
+                <tr>
+                  <td><code>genie-zerocopy-query-service</code></td>
+                  <td>Configuration-driven zero-copy query generator with Databricks Genie Space semantic modeling.</td>
+                  <td>Databricks Genie API, Serverless SQL Warehouse</td>
+                  <td><code>GenieSpaceConfig</code>, <code>ZeroCopyQueryPlan</code>, <code>GeniePromptResponse</code></td>
+                </tr>
+                <tr>
+                  <td><code>entity360-activation-service</code></td>
+                  <td>Real-time Entity 360 REST/GraphQL APIs, Kafka CDC event streaming, and Reverse ETL syndication.</td>
+                  <td>Delta Sharing, Unity Catalog Volumes, Kafka</td>
+                  <td><code>Entity360Profile</code>, <code>ActivationJob</code>, <code>IdentityGraphNode</code></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- TypeScript Code Contract Sample -->
+            <div style="margin-top: 28px;">
+              <h4 style="color: #fff; font-size: 15px; margin-bottom: 12px; font-family: var(--font-mono);">
+                📄 Sample TypeScript Contract: <code>layer-spawner-service.ts</code>
+              </h4>
+              <pre><code><span class="code-comment">// TypeScript Core Contract for Layer Spawner Microservice</span>
+<span class="code-keyword">export interface</span> <span class="code-type">SpawnLayerRequest</span> {
+  layerType: <span class="code-string">'virtual_bronze'</span> | <span class="code-string">'ingested_bronze'</span> | <span class="code-string">'conformed_silver'</span> | <span class="code-string">'golden_master'</span> | <span class="code-string">'sandbox'</span>;
+  catalogName: <span class="code-type">string</span>;           <span class="code-comment">// e.g. "prod_unify_catalog"</span>
+  schemaName: <span class="code-type">string</span>;            <span class="code-comment">// e.g. "silver_customer"</span>
+  sourceEntityId: <span class="code-type">string</span>;        <span class="code-comment">// e.g. "src-salesforce-account"</span>
+  accessMode: <span class="code-string">'ZERO_COPY'</span> | <span class="code-string">'SELECTIVE_MATERIALIZED'</span>;
+  retentionDays?: <span class="code-type">number</span>;
+  enableChangeDataFeed?: <span class="code-type">boolean</span>;
+  clusterPolicyId?: <span class="code-type">string</span>;
+}
+
+<span class="code-keyword">export interface</span> <span class="code-type">LayerProvisionResult</span> {
+  layerId: <span class="code-type">string</span>;
+  status: <span class="code-string">'PROVISIONING'</span> | <span class="code-string">'ACTIVE'</span> | <span class="code-string">'FAILED'</span>;
+  fullTableName: <span class="code-type">string</span>;         <span class="code-comment">// catalog.schema.table</span>
+  isZeroCopy: <span class="code-type">boolean</span>;
+  generatedDdl: <span class="code-type">string</span>;
+  executionDurationMs: <span class="code-type">number</span>;
+  unityCatalogRegistration: {
+    securableType: <span class="code-string">'VIEW'</span> | <span class="code-string">'TABLE'</span>;
+    registeredAt: <span class="code-type">string</span>;
+    ownerRole: <span class="code-type">string</span>;
+  };
+}</code></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chapter 4: Databricks Lakebase Metastore -->
+        <section class="doc-section" id="lakebase-metastore">
+          <div class="section-title-wrap">
+            <span class="section-num">04</span>
+            <h2 class="section-title">Databricks Lakebase Metastore Technical Specification</h2>
+          </div>
+
+          <div class="card">
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+              Instead of relying on an external disconnected relational database (e.g. Postgres or RDS) for metadata, Unify AI uses 
+              <strong>Databricks Lakebase</strong>: a high-performance active control-plane schema housed directly inside 
+              <strong>Unity Catalog</strong> (<code>system.unify_lakebase</code>).
+            </p>
+
+            <div class="callout">
+              <div class="callout-title">💡 Why Databricks Lakebase as Metastore?</div>
+              All configuration, canonical schemas, match rules, survivorship matrices, and data quality thresholds are stored as 
+              Delta tables with ACID guarantees, time-travel history (<code>VERSION AS OF</code>), automatic column-level lineage, 
+              and zero-latency Spark/SQL engine access.
+            </div>
+
+            <div class="diagram-card">
+              <div class="diagram-header">
+                <span class="diagram-title"><span>🗄️</span> ARCHITECTURE DIAGRAM 4: DATABRICKS LAKEBASE METASTORE ENTITY-RELATIONSHIP SCHEMA</span>
+              </div>
+              <div class="mermaid">
+erDiagram
+    META_SOURCES ||--o{ META_TABLE_MAPPINGS : "has"
+    META_ENTITIES ||--o{ META_ATTRIBUTES : "defines"
+    META_ENTITIES ||--o{ META_TABLE_MAPPINGS : "maps to"
+    META_ENTITIES ||--o{ META_MATCH_RULES : "governs"
+    META_ENTITIES ||--o{ META_SURVIVORSHIP_RULES : "resolves"
+    META_ENTITIES ||--o{ META_DYNAMIC_LAYERS : "spawns"
+    META_DYNAMIC_LAYERS ||--o{ META_PIPELINE_RUNS : "executes"
+
+    META_SOURCES {
+        string source_id PK
+        string source_name
+        string connector_type
+        string access_mode
+        string foreign_catalog_name
+        timestamp created_at
+    }
+
+    META_ENTITIES {
+        string entity_id PK
+        string domain_name
+        string entity_name
+        string primary_key_attr
+        int active_version
+    }
+
+    META_DYNAMIC_LAYERS {
+        string layer_id PK
+        string entity_id FK
+        string layer_type
+        string catalog_schema_name
+        boolean is_zero_copy
+        string ddl_statement
+        string status
+    }
+
+    META_MATCH_RULES {
+        string rule_id PK
+        string entity_id FK
+        string rule_type
+        float confidence_weight
+        string comparison_algorithm
+        json rule_spec_json
+    }
+              </div>
+            </div>
+
+            <h4 style="color: #fff; font-size: 15px; margin: 24px 0 12px; font-family: var(--font-mono);">
+              SQL DDL: Lakebase System Schema Creation in Databricks
+            </h4>
+            <pre><code><span class="code-comment">-- Initialize Lakebase Active Metastore in Databricks Unity Catalog</span>
+<span class="code-keyword">CREATE SCHEMA IF NOT EXISTS</span> system.unify_lakebase
+<span class="code-keyword">COMMENT</span> <span class="code-string">'Unify AI Control Plane Metastore: Stores models, layer states, match rules & pipelines'</span>;
+
+<span class="code-keyword">CREATE TABLE IF NOT EXISTS</span> system.unify_lakebase.dynamic_layers (
+  layer_id <span class="code-type">STRING NOT NULL</span>,
+  entity_id <span class="code-type">STRING NOT NULL</span>,
+  layer_type <span class="code-type">STRING NOT NULL</span>, <span class="code-comment">-- v_bronze, silver, gold_master, sandbox</span>
+  catalog_name <span class="code-type">STRING NOT NULL</span>,
+  schema_name <span class="code-type">STRING NOT NULL</span>,
+  table_or_view_name <span class="code-type">STRING NOT NULL</span>,
+  is_zero_copy <span class="code-type">BOOLEAN NOT NULL</span>,
+  ddl_statement <span class="code-type">STRING</span>,
+  status <span class="code-type">STRING NOT NULL</span>,     <span class="code-comment">-- PROVISIONING, ACTIVE, RETIRED</span>
+  created_by <span class="code-type">STRING</span>,
+  created_at <span class="code-type">TIMESTAMP</span>,
+  updated_at <span class="code-type">TIMESTAMP</span>
+)
+<span class="code-keyword">USING DELTA</span>
+<span class="code-keyword">TBLPROPERTIES</span> (<span class="code-string">'delta.enableChangeDataFeed'</span> = <span class="code-string">'true'</span>);</code></pre>
+          </div>
+        </section>
+
+        <!-- Chapter 5: Dynamic Layer Spawner & Interactive Simulator -->
+        <section class="doc-section" id="layer-spawner">
+          <div class="section-title-wrap">
+            <span class="section-num">05</span>
+            <h2 class="section-title">Dynamic Layer Spawning in Databricks</h2>
+          </div>
+
+          <div class="card">
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+              The Unify AI application allows architects and automated pipelines to <strong>spawn database layers dynamically in Databricks</strong> 
+              with zero manual DBA intervention. Layers can be spawned on demand for new business entities, regional compliance boundaries, 
+              or temporary match simulation sandboxes.
+            </p>
+
+            <div class="flow-steps">
+              <div class="flow-step-item">
+                <div class="step-num">STEP 1</div>
+                <div class="step-title">Select Entity & Domain</div>
+                <div class="step-sub">Choose Customer, Supplier, Account or custom entity</div>
+              </div>
+              <div class="flow-step-item">
+                <div class="step-num">STEP 2</div>
+                <div class="step-title">Specify Layer Type</div>
+                <div class="step-sub">Zero-Copy Virtual Bronze, Silver Conformed, Gold Master, or Sandbox</div>
+              </div>
+              <div class="flow-step-item">
+                <div class="step-num">STEP 3</div>
+                <div class="step-title">Generate DDL</div>
+                <div class="step-sub">Synthesize Delta / View DDL with Lakebase constraints</div>
+              </div>
+              <div class="flow-step-item">
+                <div class="step-num">STEP 4</div>
+                <div class="step-title">Execute on DB SQL</div>
+                <div class="step-sub">Databricks Serverless Warehouse provisions object</div>
+              </div>
+              <div class="flow-step-item">
+                <div class="step-num">STEP 5</div>
+                <div class="step-title">Register Unity Catalog</div>
+                <div class="step-sub">Securables, permissions & lineage auto-configured</div>
+              </div>
+            </div>
+
+            <!-- Interactive Layer Spawner Simulator -->
+            <div class="sim-box" id="layer-spawner-sim">
+              <div class="sim-header">
+                <div>
+                  <h3 style="color: #fff; font-size: 17px; font-weight: 700;">⚡ Interactive Dynamic Layer Spawner Simulator</h3>
+                  <p style="color: var(--text-secondary); font-size: 13px;">Test dynamic layer creation and preview generated Databricks SQL DDL in real-time.</p>
+                </div>
+                <div class="sim-badge">● LIVE DATABRICKS ENGINE SIMULATOR</div>
+              </div>
+
+              <div class="grid-3">
+                <div class="form-group">
+                  <label class="form-label">Layer Type to Spawn</label>
+                  <select class="form-select" id="simLayerType" onchange="updateSimDdl()">
+                    <option value="v_bronze">Virtual Bronze (Zero-Copy View)</option>
+                    <option value="silver">Silver Conformed (Delta Lake)</option>
+                    <option value="gold_master">Gold Master Entity (Delta + XREF)</option>
+                    <option value="sandbox">Simulation Sandbox (Clone Layer)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Target Business Entity</label>
+                  <select class="form-select" id="simEntity" onchange="updateSimDdl()">
+                    <option value="Customer">Customer (Party Domain)</option>
+                    <option value="Product">Product / SKU (Catalog Domain)</option>
+                    <option value="Supplier">Supplier / Vendor (Procurement)</option>
+                    <option value="Account">B2B Account (Commercial)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Target Unity Catalog</label>
+                  <input type="text" class="form-control" id="simCatalog" value="unify_prod_lakehouse" oninput="updateSimDdl()">
+                </div>
+              </div>
+
+              <div style="margin-top: 10px;">
+                <label class="form-label">Generated Databricks SQL DDL</label>
+                <pre><code id="simDdlOutput">-- Click button below to spawn layer</code></pre>
+              </div>
+
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 18px;">
+                <button class="btn btn-primary" onclick="executeSpawnSim()">
+                  <span>⚡ Spawn Layer in Databricks</span>
+                </button>
+                <span id="simExecutionStatus" style="font-size: 13px; color: var(--text-muted); font-family: var(--font-mono);">
+                  Ready for execution
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chapter 6: Automated End-to-End Pipelines -->
+        <section class="doc-section" id="automated-pipelines">
+          <div class="section-title-wrap">
+            <span class="section-num">06</span>
+            <h2 class="section-title">Automated End-to-End Pipeline Synthesis (DLT & DABs)</h2>
+          </div>
+
+          <div class="card">
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+              Unify AI eliminates brittle manual pipeline coding. From the visual canvas, the 
+              <code>pipeline-orchestrator-service</code> automatically synthesizes, validates, and deploys 
+              <strong>Databricks Asset Bundles (DABs)</strong> and <strong>Delta Live Tables (DLT)</strong> pipelines.
+            </p>
+
+            <div class="diagram-card">
+              <div class="diagram-header">
+                <span class="diagram-title"><span>🔄</span> ARCHITECTURE DIAGRAM 5: AUTOMATED PIPELINE SYNTHESIS & EXECUTION FLOW</span>
+              </div>
+              <div class="mermaid">
+flowchart TD
+    CONFIG["UI Canvas / JSON Pipeline Spec"] --> COMPILER["pipeline-orchestrator-service<br/>(TypeScript AST Compiler)"]
+    COMPILER --> DAB["Databricks Asset Bundle (databricks.yml)<br/>• Pipeline Resources<br/>• Cluster Policies<br/>• Target Environments"]
+    COMPILER --> DLT_CODE["Synthesized DLT Pipeline (python/sql)<br/>• @dlt.table with Expectations<br/>• Streaming MERGE joins<br/>• Golden Survivorship Logic"]
+    
+    DAB --> CLI["Databricks Bundle CLI / REST Deployer"]
+    DLT_CODE --> CLI
+    CLI --> DLT_RUN["Databricks DLT Runtime Engine"]
+    DLT_RUN --> TELEMETRY["Event Log & Lakehouse Monitoring"]
+    TELEMETRY --> UC_LINEAGE["Automatic Unity Catalog Lineage Graph"]
+              </div>
+            </div>
+
+            <div class="grid-2" style="margin-top: 24px;">
+              <div>
+                <h4 style="color: #fff; font-size: 14px; margin-bottom: 8px; font-family: var(--font-mono);">
+                  Synthesized Databricks Asset Bundle (databricks.yml)
+                </h4>
+                <pre><code><span class="code-comment"># Auto-generated by Unify AI pipeline-orchestrator-service</span>
+<span class="code-keyword">bundle:</span>
+  name: unify_customer_mastering_pipeline
+
+<span class="code-keyword">resources:</span>
+  pipelines:
+    customer_dlt:
+      name: "Unify AI - Customer 360 DLT"
+      target: "gold_customer"
+      continuous: <span class="code-string">true</span>
+      channel: <span class="code-string">"preview"</span>
+      libraries:
+        - notebook:
+            path: "/Workspace/Unify/pipelines/customer_master_dlt.py"
+      clusters:
+        - label: "default"
+          autoscale:
+            min_workers: 1
+            max_workers: 8</code></pre>
+              </div>
+
+              <div>
+                <h4 style="color: #fff; font-size: 14px; margin-bottom: 8px; font-family: var(--font-mono);">
+                  Synthesized DLT Delta Expectations Rule
+                </h4>
+                <pre><code><span class="code-comment"># Auto-generated DLT Python snippet with quality expectations</span>
+<span class="code-keyword">import</span> dlt
+<span class="code-keyword">from</span> pyspark.sql.functions <span class="code-keyword">import</span> col
+
+<span class="code-keyword">@dlt.table</span>(
+  name=<span class="code-string">"silver_customer_conformed"</span>,
+  comment=<span class="code-string">"Conformed Customer layer with automated DQ assertions"</span>
+)
+<span class="code-keyword">@dlt.expect_or_drop</span>(<span class="code-string">"valid_customer_id"</span>, <span class="code-string">"customer_id IS NOT NULL"</span>)
+<span class="code-keyword">@dlt.expect_or_quarantine</span>(<span class="code-string">"valid_email"</span>, <span class="code-string">"email LIKE '%_@__%.__%'"</span>)
+<span class="code-keyword">def</span> <span class="code-func">silver_customer</span>():
+    <span class="code-keyword">return</span> (
+        dlt.read_stream(<span class="code-string">"v_bronze_salesforce_account"</span>)
+           .select(<span class="code-string">"id as customer_id"</span>, <span class="code-string">"name"</span>, <span class="code-string">"email"</span>, <span class="code-string">"phone"</span>)
+    )</code></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chapter 7: Zero-Copy Queries & Databricks Genie -->
+        <section class="doc-section" id="genie-zerocopy">
+          <div class="section-title-wrap">
+            <span class="section-num">07</span>
+            <h2 class="section-title">Zero-Copy Queries & Databricks Genie Integration</h2>
+          </div>
+
+          <div class="card">
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+              Unify AI couples configuration-driven federated queries with <strong>Databricks Genie</strong>. 
+              Genie Spaces are configured with domain semantics, certified metric definitions, and zero-copy view topologies. 
+              Business users and stewards can ask questions in natural language, and Genie generates optimized pushdown SQL 
+              executed directly over live source systems without intermediate replication.
+            </p>
+
+            <div class="diagram-card">
+              <div class="diagram-header">
+                <span class="diagram-title"><span>🔮</span> ARCHITECTURE DIAGRAM 6: DATABRICKS GENIE ZERO-COPY QUERY LIFECYCLE</span>
+              </div>
+              <div class="mermaid">
+flowchart LR
+    USER["Business User / Data Steward<br/>('Show me EMEA enterprise accounts with open SFDC cases and billing invoices')"] 
+    --> GENIE_SPACE["Databricks Genie Space<br/>• Semantic Entity Model<br/>• Certified Metrics & Relationships<br/>• Natural Language Understanding"]
+
+    GENIE_SPACE --> SQL_GEN["Synthesized Pushdown SQL Query<br/>• Predicate Pushdown (region='EMEA')<br/>• Projection Pushdown"]
+
+    SQL_GEN --> ENGINE["Databricks Serverless SQL Warehouse"]
+
+    ENGINE -->|Zero-Copy Pushdown Query| SFDC_FED["Salesforce Foreign Catalog<br/>(External View)"]
+    ENGINE -->|Zero-Copy Pushdown Query| SAP_FED["SAP S/4HANA Foreign Catalog<br/>(External View)"]
+    ENGINE -->|Zero-Copy Pushdown Query| GOLD_FED["Gold Master Delta<br/>(Identity Graph)"]
+
+    SFDC_FED & SAP_FED & GOLD_FED --> RESULTS["Unified Result Set (Zero Data Duplication)"]
+    RESULTS --> USER
+              </div>
+            </div>
+
+            <!-- Interactive Genie Simulator -->
+            <div class="sim-box" id="genie-sim">
+              <div class="sim-header">
+                <div>
+                  <h3 style="color: #fff; font-size: 17px; font-weight: 700;">🔮 Interactive Databricks Genie Zero-Copy Query Tester</h3>
+                  <p style="color: var(--text-secondary); font-size: 13px;">Type a natural language business question to see Genie's synthesized zero-copy pushdown SQL.</p>
+                </div>
+                <div class="sim-badge">● GENIE SPACE: CUSTOMER 360</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Natural Language Question to Genie</label>
+                <div style="display: flex; gap: 10px;">
+                  <input type="text" class="form-control" id="geniePromptInput" value="Find all enterprise accounts with annual revenue > $10M and open Salesforce support cases">
+                  <button class="btn btn-primary" onclick="runGenieSim()" style="white-space: nowrap;">
+                    <span>Ask Genie ✦</span>
+                  </button>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <span style="font-size: 11px; color: var(--text-muted);">Quick Prompts:</span>
+                <a href="javascript:void(0)" onclick="setGeniePrompt('List duplicate customers between Salesforce and SAP S/4HANA with high confidence')" style="font-size: 11px; color: var(--primary-light);">Duplicate Match Review</a>
+                <span style="color: var(--text-muted);">•</span>
+                <a href="javascript:void(0)" onclick="setGeniePrompt('Show complete golden lineage for customer CUST-00192837 across all sources')" style="font-size: 11px; color: var(--primary-light);">Golden Customer Lineage</a>
+                <span style="color: var(--text-muted);">•</span>
+                <a href="javascript:void(0)" onclick="setGeniePrompt('Show EMEA customers with invoices past 60 days overdue without copying data')" style="font-size: 11px; color: var(--primary-light);">Zero-Copy Overdue Invoices</a>
+              </div>
+
+              <div style="margin-top: 10px;">
+                <label class="form-label">Genie Synthesized Zero-Copy SQL (Federated Pushdown)</label>
+                <pre><code id="genieSqlOutput">-- Click 'Ask Genie' to test execution</code></pre>
+              </div>
+
+              <div id="genieExecSummary" style="display: none; margin-top: 14px; padding: 12px 16px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; font-size: 12.5px; color: #a7f3d0;">
+                ✓ <strong>Zero-Copy Pushdown Verified:</strong> 0 bytes copied to lakehouse storage. 2 predicates pushed down to Salesforce JDBC, 1 projection pushed down to SAP S/4HANA. Execution latency: 42ms.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chapter 8: Entity Resolution, Mastering & Identity Graph -->
+        <section class="doc-section" id="entity-mastering">
+          <div class="section-title-wrap">
+            <span class="section-num">08</span>
+            <h2 class="section-title">Entity Resolution, Survivorship & Identity Graph Engine</h2>
+          </div>
+
+          <div class="card">
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+              Mastering in Unify AI combines deterministic matching (exact IDs, tax numbers), fuzzy phonetic matching 
+              (Jaro-Winkler, Levenshtein, Double Metaphone), and probabilistic scoring (Fellegi-Sunter) with 
+              configurable attribute survivorship rules.
+            </p>
+
+            <div class="diagram-card">
+              <div class="diagram-header">
+                <span class="diagram-title"><span>👑</span> ARCHITECTURE DIAGRAM 7: GOLDEN RECORD & IDENTITY GRAPH TOPOLOGY</span>
+              </div>
+              <div class="mermaid">
+flowchart TB
+    subgraph SOURCES["Source Records across Enterprise Silos"]
+        SF["Salesforce CRM<br/>ID: CRM-10231<br/>Name: Acme Corporation Inc.<br/>Phone: +1 555-0192"]
+        SAP["SAP S/4HANA<br/>ID: BP-88391<br/>Name: ACME CORP<br/>Address: 100 Main St, Austin TX"]
+        PORTAL["Web Portal Auth<br/>ID: USER-7712<br/>Email: billing@acme.com<br/>Phone: 555-0192"]
+    end
+
+    subgraph ENGINE["Unification & Resolution Engine"]
+        MATCH["Rule-Based & AI Match Clustering<br/>• Exact Phone Match (100%)<br/>• Fuzzy Name Match (96.4% Jaro-Winkler)<br/>• Joint Confidence: 98.7%"]
+        SURVIVE["Attribute Survivorship Matrix<br/>• Name: CRM (Source Priority)<br/>• Phone: SAP (Most Recent)<br/>• Address: SAP (High Completeness)<br/>• Email: Web Portal (Authoritative)"]
+    end
+
+    subgraph GOLDEN_RESULT["Golden Entity & Identity Graph"]
+        GOLDEN["GOLDEN CUSTOMER: CUST-00192837<br/>• Legal Name: Acme Corporation Inc.<br/>• Email: billing@acme.com<br/>• Phone: +1 555-0192<br/>• Address: 100 Main St, Austin TX"]
+        GRAPH["Identity Graph Connections<br/>├── Account ACC-2218<br/>├── Household HH-921<br/>└── Parent Enterprise ORG-812"]
+    end
+
+    SOURCES --> MATCH --> SURVIVE --> GOLDEN_RESULT
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chapter 9: Governance, Lineage & Security -->
+        <section class="doc-section" id="lineage-governance">
+          <div class="section-title-wrap">
+            <span class="section-num">09</span>
+            <h2 class="section-title">Unity Catalog Lineage, Auditability & Governance</h2>
+          </div>
+
+          <div class="card">
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+              Enterprise compliance requires 100% explainability for every golden attribute decision. 
+              Unify AI automatically registers column-level lineage in <strong>Databricks Unity Catalog</strong>, 
+              providing audit-ready provenance from raw source system field to final golden record.
+            </p>
+
+            <div class="diagram-card">
+              <div class="diagram-header">
+                <span class="diagram-title"><span>🛡️</span> ARCHITECTURE DIAGRAM 8: COLUMN-LEVEL LINEAGE IN UNITY CATALOG</span>
+              </div>
+              <div class="mermaid">
+flowchart LR
+    SF_COL["salesforce.account.BillingCity"] -->|Federation View| V_CITY["v_bronze_customer.city"]
+    SAP_COL["sap.kna1.ORT01"] -->|CDC Stream| S_CITY["silver_customer.city_cleaned"]
+
+    V_CITY --> SURV_DECISION["Survivorship Resolver<br/>(Rule: Trust SAP over CRM for City)"]
+    S_CITY --> SURV_DECISION
+
+    SURV_DECISION --> GOLD_CITY["gold_customer.city<br/>(Value: 'San Francisco', Winning Source: SAP)"]
+    GOLD_CITY --> DATA_PRODUCT["Customer 360 Data Product API"]
+    GOLD_CITY --> GENIE_SPACE["Genie NL Query Space"]
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chapter 10: Frontend React + TypeScript Architecture -->
+        <section class="doc-section" id="frontend-architecture">
+          <div class="section-title-wrap">
+            <span class="section-num">10</span>
+            <h2 class="section-title">React + TypeScript Frontend Architecture</h2>
+          </div>
+
+          <div class="card">
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+              The Unify AI frontend is built with <strong>React 19 and TypeScript</strong>, following an atomic component design 
+              and state machine architecture. It features a reactive event-driven client store, virtualized tables for multi-million record 
+              browsing, dark mode glassmorphism, and instant sub-10ms navigation.
+            </p>
+
+            <div class="grid-3">
+              <div class="service-card">
+                <div class="service-header">
+                  <div class="service-icon">⚛️</div>
+                  <div class="service-name">Component Hierarchy</div>
+                </div>
+                <div class="service-desc">
+                  Shell layout with persistent responsive left navigation, topbar with persona & environment context, drawer for AI copilot, and dynamic viewports.
+                </div>
+              </div>
+
+              <div class="service-card">
+                <div class="service-header">
+                  <div class="service-icon">🔄</div>
+                  <div class="service-name">Type-Safe State & Routing</div>
+                </div>
+                <div class="service-desc">
+                  Client-side reactive store with zero-runtime dependencies, strict TypeScript interfaces for all payloads, and deep-linkable hash routing.
+                </div>
+              </div>
+
+              <div class="service-card">
+                <div class="service-header">
+                  <div class="service-icon">🎨</div>
+                  <div class="service-name">Design Tokens</div>
+                </div>
+                <div class="service-desc">
+                  Curated HSL color palette, dark mode glassmorphism (<code>backdrop-filter: blur(16px)</code>), fluid typography, and accessible contrast ratios.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Initialize Mermaid
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        darkMode: true,
+        background: '#0b1120',
+        primaryColor: '#6366f1',
+        primaryTextColor: '#f8fafc',
+        primaryBorderColor: '#818cf8',
+        lineColor: '#06b6d4',
+        secondaryColor: '#1e293b',
+        tertiaryColor: '#0f172a'
+      }
+    });
+
+    function setActiveNav(el) {
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    // Dynamic Layer Spawner Simulator Logic
+    function updateSimDdl() {
+      const layerType = document.getElementById('simLayerType').value;
+      const entity = document.getElementById('simEntity').value;
+      const catalog = document.getElementById('simCatalog').value || 'unify_prod_lakehouse';
+      const output = document.getElementById('simDdlOutput');
+
+      let ddl = '';
+      if (layerType === 'v_bronze') {
+        ddl = `-- Zero-Copy Federated View: No data moved into Delta storage\n` +
+              `CREATE OR REPLACE VIEW ${catalog}.v_bronze.v_${entity.toLowerCase()}_federated AS\n` +
+              `SELECT \n` +
+              `  source_record_id,\n` +
+              `  entity_payload,\n` +
+              `  _source_timestamp,\n` +
+              `  'SFDC-001' AS source_origin_id\n` +
+              `FROM foreign_salesforce_catalog.sales_cloud.${entity.toLowerCase()}\n` +
+              `WITH SCHEMA EVOLUTION\n` +
+              `COMMENT 'Zero-Copy Virtual Bronze view over Salesforce system of record';`;
+      } else if (layerType === 'silver') {
+        ddl = `-- Conformed Silver Layer: Standardized schema & DQ rules\n` +
+              `CREATE OR REPLACE TABLE ${catalog}.silver.silver_${entity.toLowerCase()}_conformed (\n` +
+              `  conformed_id STRING NOT NULL,\n` +
+              `  primary_name STRING,\n` +
+              `  standardized_email STRING,\n` +
+              `  standardized_phone STRING,\n` +
+              `  dq_score DOUBLE,\n` +
+              `  source_system STRING,\n` +
+              `  conformed_at TIMESTAMP\n` +
+              `)\n` +
+              `USING DELTA\n` +
+              `PARTITIONED BY (source_system)\n` +
+              `TBLPROPERTIES ('delta.enableChangeDataFeed' = 'true');`;
+      } else if (layerType === 'gold_master') {
+        ddl = `-- Golden Master Entity Layer: Survived identity records\n` +
+              `CREATE OR REPLACE TABLE ${catalog}.gold.gold_master_${entity.toLowerCase()} (\n` +
+              `  golden_id STRING NOT NULL PRIMARY KEY,\n` +
+              `  master_attributes MAP<STRING, STRING>,\n` +
+              `  confidence_score DOUBLE,\n` +
+              `  winning_sources MAP<STRING, STRING>,\n` +
+              `  active_status STRING,\n` +
+              `  created_at TIMESTAMP,\n` +
+              `  updated_at TIMESTAMP\n` +
+              `)\n` +
+              `USING DELTA\n` +
+              `TBLPROPERTIES ('delta.autoOptimize.optimizeWrite' = 'true');`;
+      } else {
+        ddl = `-- Temporary Simulation Sandbox Layer (Zero-Copy Clone)\n` +
+              `CREATE OR REPLACE TABLE ${catalog}.sandbox.sim_sandbox_${entity.toLowerCase()}_${Date.now()}\n` +
+              `SHALLOW CLONE ${catalog}.silver.silver_${entity.toLowerCase()}_conformed\n` +
+              `TBLPROPERTIES ('unify.sandbox_ttl_hours' = '48');`;
+      }
+
+      output.innerText = ddl;
+    }
+
+    function executeSpawnSim() {
+      const statusEl = document.getElementById('simExecutionStatus');
+      const layerType = document.getElementById('simLayerType').value;
+      const entity = document.getElementById('simEntity').value;
+
+      statusEl.innerHTML = '<span style="color: var(--secondary);">⏳ Provisioning layer on Databricks Serverless SQL Warehouse...</span>';
+
+      setTimeout(() => {
+        statusEl.innerHTML = `✓ <strong style="color: var(--success);">SUCCESS:</strong> Layer <code>${layerType}_${entity.toLowerCase()}</code> successfully spawned in Databricks! Registered in Lakebase Metastore and Unity Catalog. (38ms)`;
+      }, 750);
+    }
+
+    // Databricks Genie Query Simulator Logic
+    function setGeniePrompt(text) {
+      document.getElementById('geniePromptInput').value = text;
+      runGenieSim();
+    }
+
+    function runGenieSim() {
+      const prompt = document.getElementById('geniePromptInput').value;
+      const output = document.getElementById('genieSqlOutput');
+      const summary = document.getElementById('genieExecSummary');
+
+      let sql = '';
+      if (prompt.toLowerCase().includes('duplicate') || prompt.toLowerCase().includes('match')) {
+        sql = `-- Databricks Genie: Generated Zero-Copy Match Analysis SQL\n` +
+              `SELECT \n` +
+              `  m.cluster_id,\n` +
+              `  sfdc.Name AS sfdc_account_name,\n` +
+              `  sap.NAME1 AS sap_customer_name,\n` +
+              `  m.confidence_score,\n` +
+              `  m.matching_rule\n` +
+              `FROM unify_prod_lakehouse.gold.entity_match_clusters m\n` +
+              `JOIN foreign_salesforce.account sfdc ON m.source_id_a = sfdc.Id\n` +
+              `JOIN foreign_sap.kna1 sap ON m.source_id_b = sap.KUNNR\n` +
+              `WHERE m.confidence_score >= 0.85\n` +
+              `ORDER BY m.confidence_score DESC\n` +
+              `LIMIT 100;`;
+      } else if (prompt.toLowerCase().includes('lineage') || prompt.toLowerCase().includes('cust-')) {
+        sql = `-- Databricks Genie: Generated Zero-Copy Lineage Provenance SQL\n` +
+              `SELECT \n` +
+              `  g.golden_id,\n` +
+              `  g.attribute_name,\n` +
+              `  g.survived_value,\n` +
+              `  g.winning_source,\n` +
+              `  g.rule_applied,\n` +
+              `  g.evaluation_timestamp\n` +
+              `FROM unify_prod_lakehouse.gold.attribute_lineage_log g\n` +
+              `WHERE g.golden_id = 'CUST-00192837'\n` +
+              `ORDER BY g.evaluation_timestamp DESC;`;
+      } else {
+        sql = `-- Databricks Genie: Zero-Copy Pushdown Query across Federated Catalogs\n` +
+              `SELECT \n` +
+              `  g.golden_id,\n` +
+              `  sfdc.Name AS enterprise_name,\n` +
+              `  sfdc.AnnualRevenue,\n` +
+              `  c.CaseNumber,\n` +
+              `  c.Subject AS open_case_subject\n` +
+              `FROM foreign_salesforce.account sfdc\n` +
+              `JOIN foreign_salesforce.case c ON sfdc.Id = c.AccountId AND c.Status != 'Closed'\n` +
+              `JOIN unify_prod_lakehouse.gold.gold_master_customer g ON g.salesforce_id = sfdc.Id\n` +
+              `WHERE sfdc.AnnualRevenue > 10000000\n` +
+              `/* Predicates pushed down to Salesforce API adapter without data copy */\n` +
+              `LIMIT 50;`;
+      }
+
+      output.innerText = sql;
+      summary.style.display = 'block';
+    }
+
+    // Filter documentation sections
+    function filterDocContent(query) {
+      if (!query || query.trim() === '') {
+        document.querySelectorAll('.doc-section').forEach(s => s.style.display = 'block');
+        return;
+      }
+      const q = query.toLowerCase();
+      document.querySelectorAll('.doc-section').forEach(s => {
+        const text = s.innerText.toLowerCase();
+        s.style.display = text.includes(q) ? 'block' : 'none';
+      });
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', () => {
+      updateSimDdl();
+      runGenieSim();
+    });
+  </script>
+</body>
+</html>

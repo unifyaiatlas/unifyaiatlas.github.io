@@ -36,17 +36,23 @@ export class Router {
 
     store.setRoute(hash);
 
+    const [pathPart, queryPart] = hash.split('?');
+    const cleanHash = pathPart || '#/';
+
     let matchResult = null;
     let matchedRoute = null;
 
     for (const r of this.routes) {
-      const match = hash.match(r.regex);
+      const match = cleanHash.match(r.regex);
       if (match) {
         matchedRoute = r;
         const params = {};
         r.paramNames.forEach((name, index) => {
           params[name] = match[index + 1];
         });
+        if (queryPart) {
+          params.queryParams = Object.fromEntries(new URLSearchParams(queryPart));
+        }
         matchResult = params;
         break;
       }
