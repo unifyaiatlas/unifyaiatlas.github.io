@@ -52,6 +52,35 @@ export class Router {
       }
     }
 
+    const isAuthRoute = hash === '#/login' || hash === '#/register' || hash === '#/forgot-password';
+    const appRoot = document.getElementById('app-root');
+
+    if (isAuthRoute) {
+      if (matchedRoute && appRoot) {
+        try {
+          const pageHtml = await matchedRoute.handler(matchResult || {});
+          if (typeof pageHtml === 'string') {
+            appRoot.innerHTML = pageHtml;
+          } else if (pageHtml instanceof HTMLElement) {
+            appRoot.innerHTML = '';
+            appRoot.appendChild(pageHtml);
+          }
+          window.dispatchEvent(new CustomEvent('unify:page-mounted', { detail: { hash, params: matchResult } }));
+        } catch (err) {
+          console.error('Error rendering auth route:', hash, err);
+        }
+      }
+      return;
+    }
+
+    // Authenticated / App Route: Ensure shell is mounted
+    let viewport = document.getElementById('main-content-viewport');
+    if (!viewport && window.unifyMountShell) {
+      window.unifyMountShell();
+      viewport = document.getElementById('main-content-viewport');
+      this.container = viewport;
+    }
+
     if (matchedRoute && this.container) {
       try {
         this.container.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);"><span style="display:inline-block; animation: spin 1s linear infinite;">⏳</span> Loading fabric telemetry...</div>';

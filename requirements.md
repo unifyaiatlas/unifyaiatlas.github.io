@@ -92,6 +92,52 @@ UNIFY AI
     └── Settings
 ```
 
+```
+
+---
+
+# 2.1 Authentication & User Onboarding
+
+Unify AI provides enterprise-grade authentication with support for both federated Single Sign-On (SSO) and direct credential-based access.
+
+## Unauthenticated Routes
+
+```text
+/login               — Enterprise Sign-In
+/register            — User Registration & Workspace Provisioning
+/forgot-password     — Self-service credential recovery
+/reset-password      — Token-validated credential update
+```
+
+## Features & Requirements
+
+### 1. Enterprise Login (`/login`)
+* **Dual Login Modes**:
+  * Direct enterprise email and password with brute-force rate-limiting.
+  * Enterprise Federated SSO: Okta, Microsoft Entra (Azure AD), Google Workspace (SAML 2.0 / OIDC).
+* **Persona Quick-Switch (Demo Mode)**: Instant access presets for Data Architect, Data Steward, Business Analyst, and Platform Administrator.
+* **Remember Session**: Secure 30-day token persistence with device fingerprinting.
+* **MFA / 2FA**: Support for Time-based One-Time Password (TOTP) and FIDO2 WebAuthn hardware keys.
+* **Direct Redirection**: Upon successful authentication, automatically redirect to the requested deep route or default to `/`.
+
+### 2. User Registration (`/register`)
+* **Enterprise Identity Fields**:
+  * Full Name
+  * Work Email (domain validation against authorized corporate tenants)
+  * Organization / Tenant Name
+  * Strong Password (minimum 12 characters, complexity requirements, live strength meter)
+* **Initial Role Request**:
+  * Data Architect (Sources, Modeling, Pipeline Engineering)
+  * Data Steward (Review Queue, Match Validation, Remediation)
+  * Business User / Analyst (Search, Entity 360, Data Products)
+  * Platform Administrator (Security, AI Gateways, Audit)
+* **Terms & Data Privacy Consent**: Explicit acceptance of SOC2 and GDPR governance terms.
+* **Workspace Provisioning**: Initializes tenant sandbox and routes user to the Platform Overview.
+
+### 3. Password Recovery (`/forgot-password`)
+* Time-limited, cryptographically signed magic link generation.
+* Anti-enumeration response messaging.
+
 ---
 
 # 3. Global Application Shell
@@ -1671,6 +1717,9 @@ The minimum route implementation should be:
 
 ```text
 /
+├── /login
+├── /register
+├── /forgot-password
 ├── /data-foundation
 │   ├── /sources
 │   ├── /sources/new

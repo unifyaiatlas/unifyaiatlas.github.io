@@ -24,6 +24,13 @@ class AppStore {
     this.state = {
       currentRoute: window.location.hash || '#/',
       activePersona: 'Data Architect', // Data Architect, Data Steward, Business User, Platform Administrator
+      isAuthenticated: true,
+      currentUser: {
+        name: 'Manjit Singh',
+        email: 'manjit@unify.ai',
+        role: 'Data Architect',
+        tenant: 'Global Enterprise Ltd'
+      },
       isSearchOpen: false,
       isAiDrawerOpen: false,
       aiMessages: [
@@ -46,6 +53,20 @@ class AppStore {
     };
 
     this.listeners = new Set();
+  }
+
+  login(user) {
+    this.state.isAuthenticated = true;
+    this.state.currentUser = user;
+    this.state.activePersona = user.role || 'Data Architect';
+    this.notify();
+  }
+
+  logout() {
+    this.state.isAuthenticated = false;
+    this.state.currentUser = null;
+    this.notify();
+    window.location.hash = '#/login';
   }
 
   getState() {

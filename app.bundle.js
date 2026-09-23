@@ -669,6 +669,13 @@ class AppStore {
     this.state = {
       currentRoute: window.location.hash || '#/',
       activePersona: 'Data Architect', // Data Architect, Data Steward, Business User, Platform Administrator
+      isAuthenticated: true,
+      currentUser: {
+        name: 'Manjit Singh',
+        email: 'manjit@unify.ai',
+        role: 'Data Architect',
+        tenant: 'Global Enterprise Ltd'
+      },
       isSearchOpen: false,
       isAiDrawerOpen: false,
       aiMessages: [
@@ -691,6 +698,20 @@ class AppStore {
     };
 
     this.listeners = new Set();
+  }
+
+  login(user) {
+    this.state.isAuthenticated = true;
+    this.state.currentUser = user;
+    this.state.activePersona = user.role || 'Data Architect';
+    this.notify();
+  }
+
+  logout() {
+    this.state.isAuthenticated = false;
+    this.state.currentUser = null;
+    this.notify();
+    window.location.hash = '#/login';
   }
 
   getState() {
@@ -819,6 +840,35 @@ class Router {
         matchResult = params;
         break;
       }
+    }
+
+    const isAuthRoute = hash === '#/login' || hash === '#/register' || hash === '#/forgot-password';
+    const appRoot = document.getElementById('app-root');
+
+    if (isAuthRoute) {
+      if (matchedRoute && appRoot) {
+        try {
+          const pageHtml = await matchedRoute.handler(matchResult || {});
+          if (typeof pageHtml === 'string') {
+            appRoot.innerHTML = pageHtml;
+          } else if (pageHtml instanceof HTMLElement) {
+            appRoot.innerHTML = '';
+            appRoot.appendChild(pageHtml);
+          }
+          window.dispatchEvent(new CustomEvent('unify:page-mounted', { detail: { hash, params: matchResult } }));
+        } catch (err) {
+          console.error('Error rendering auth route:', hash, err);
+        }
+      }
+      return;
+    }
+
+    // Authenticated / App Route: Ensure shell is mounted
+    let viewport = document.getElementById('main-content-viewport');
+    if (!viewport && window.unifyMountShell) {
+      window.unifyMountShell();
+      viewport = document.getElementById('main-content-viewport');
+      this.container = viewport;
     }
 
     if (matchedRoute && this.container) {
@@ -1115,15 +1165,18 @@ function renderTopbar() {
           <span>Journey Step ${state.currentJourneyStep} →</span>
         </button>
 
-        <!-- User Profile Pill -->
+        <!-- User Profile & Sign Out (Section 2.1) -->
         <div style="display: flex; align-items: center; gap: 8px; padding-left: 8px; border-left: 1px solid var(--border-subtle);">
-          <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #4f46e5, #06b6d4); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 12px;">
-            MS
+          <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #4f46e5, #06b6d4); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 11px;">
+            ${(state.currentUser?.name || 'MS').split(' ').map(n => n[0]).join('').slice(0, 2)}
           </div>
           <div style="display: flex; flex-direction: column;">
-            <span style="font-size: 12px; font-weight: 600; color: #fff;">Manjit Singh</span>
+            <span style="font-size: 12px; font-weight: 600; color: #fff;">${state.currentUser?.name || 'Manjit Singh'}</span>
             <span style="font-size: 10px; color: var(--text-muted);">${state.activePersona}</span>
           </div>
+          <button class="btn btn-ghost btn-sm" onclick="window.unifyLogout()" title="Sign Out of Enterprise Fabric" style="padding: 4px 6px; font-size: 11px; margin-left: 4px; color: var(--text-muted);">
+            Sign Out ➔
+          </button>
         </div>
       </div>
     </header>
@@ -1275,6 +1328,243 @@ function renderAppShell() {
 
       <div id="ai-drawer-container">${renderAiAssistant()}</div>
       <div id="search-modal-container">${renderGlobalSearch()}</div>
+    </div>
+  `;
+}
+
+
+// ==================== src/pages/auth/login.js ====================
+// Authentication Page: Enterprise Login (Route: /login)
+async function renderLoginPage() {
+  return `
+    <div style="min-height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 20%, #171b34 0%, #080b12 70%); padding: 20px; box-sizing: border-box;">
+      <div style="width: 100%; max-width: 440px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 32px; box-shadow: var(--shadow-lg);">
+        
+        <!-- Brand Header -->
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #06b6d4); font-weight: 800; font-size: 20px; color: #fff; margin-bottom: 12px; box-shadow: 0 0 16px rgba(99, 102, 241, 0.4);">
+            U
+          </div>
+          <h1 style="font-family: var(--font-display); font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.3px;">
+            Unify AI Fabric
+          </h1>
+          <p style="font-size: 12.5px; color: var(--text-secondary); margin-top: 4px;">
+            Enterprise Zero-Copy Data Unification & MDM
+          </p>
+        </div>
+
+        <!-- Login Form -->
+        <form onsubmit="window.unifyHandleLogin(event)" style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 12px;">Corporate Work Email</label>
+            <input type="email" id="login-email" class="form-input" placeholder="name@enterprise.com" value="manjit@unify.ai" required style="padding: 10px 12px; font-size: 13px;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label class="form-label" style="font-size: 12px; margin-bottom: 0;">Password</label>
+              <a href="#/forgot-password" style="font-size: 11px; color: #818cf8; text-decoration: none;">Forgot password?</a>
+            </div>
+            <input type="password" id="login-password" class="form-input" placeholder="••••••••••••" value="EnterpriseMasterKey2026!" required style="padding: 10px 12px; font-size: 13px;">
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" checked id="remember-me">
+              <span>Remember session (30 days)</span>
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="padding: 10px; font-size: 13px; font-weight: 600; width: 100%; margin-top: 6px;">
+            Sign In to Fabric →
+          </button>
+        </form>
+
+        <!-- Federated SSO Options (Section 2.1) -->
+        <div style="margin: 20px 0 16px; position: relative; text-align: center;">
+          <div style="position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--border-subtle);"></div>
+          <span style="position: relative; background: #0f172a; padding: 0 10px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+            Or authenticate with SSO
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+          <button class="btn btn-secondary btn-sm" onclick="window.unifyLoginSSO('Okta')" style="padding: 7px; font-size: 11px;">
+            Okta
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="window.unifyLoginSSO('Microsoft Entra')" style="padding: 7px; font-size: 11px;">
+            Azure AD
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="window.unifyLoginSSO('Google')" style="padding: 7px; font-size: 11px;">
+            Google
+          </button>
+        </div>
+
+        <!-- Demo Persona Quick Select (Section 2.1 & 53) -->
+        <div style="margin-top: 20px; padding: 12px; background: rgba(99, 102, 241, 0.08); border: 1px dashed rgba(99, 102, 241, 0.3); border-radius: var(--radius-md);">
+          <div style="font-size: 11px; font-weight: 600; color: #a5b4fc; margin-bottom: 6px; text-transform: uppercase;">
+            ✦ Demo Fast-Sign-In Presets
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+            <button class="btn btn-ghost btn-sm" onclick="window.unifyQuickLogin('Manjit Singh', 'Data Architect', 'manjit@unify.ai')" style="font-size: 11px; padding: 4px; justify-content: flex-start; text-align: left;">
+              👤 Data Architect
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="window.unifyQuickLogin('Elena Rostova', 'Data Steward', 'elena@unify.ai')" style="font-size: 11px; padding: 4px; justify-content: flex-start; text-align: left;">
+              ⚖️ Data Steward
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="window.unifyQuickLogin('Marcus Vance', 'Business Analyst', 'marcus@unify.ai')" style="font-size: 11px; padding: 4px; justify-content: flex-start; text-align: left;">
+              📊 Business Analyst
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="window.unifyQuickLogin('Sarah Chen', 'Administrator', 'sarah@unify.ai')" style="font-size: 11px; padding: 4px; justify-content: flex-start; text-align: left;">
+              🔧 Administrator
+            </button>
+          </div>
+        </div>
+
+        <!-- Registration Link -->
+        <div style="text-align: center; margin-top: 18px; font-size: 12px; color: var(--text-secondary);">
+          Need an enterprise tenant?
+          <a href="#/register" style="color: #38bdf8; text-decoration: none; font-weight: 500; margin-left: 4px;">Register Workspace →</a>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+
+// ==================== src/pages/auth/register.js ====================
+// Authentication Page: Enterprise User Registration & Tenant Provisioning (Route: /register)
+async function renderRegisterPage() {
+  return `
+    <div style="min-height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 20%, #171b34 0%, #080b12 70%); padding: 20px; box-sizing: border-box;">
+      <div style="width: 100%; max-width: 520px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 32px; box-shadow: var(--shadow-lg);">
+        
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 22px;">
+          <div style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #06b6d4); font-weight: 800; font-size: 20px; color: #fff; margin-bottom: 12px; box-shadow: 0 0 16px rgba(99, 102, 241, 0.4);">
+            U
+          </div>
+          <h1 style="font-family: var(--font-display); font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.3px;">
+            Provision Unify AI Workspace
+          </h1>
+          <p style="font-size: 12.5px; color: var(--text-secondary); margin-top: 4px;">
+            Register enterprise identity and initialize zero-copy MDM tenant
+          </p>
+        </div>
+
+        <!-- Registration Form (Section 2.1) -->
+        <form onsubmit="window.unifyHandleRegister(event)" style="display: flex; flex-direction: column; gap: 12px;">
+          <div class="grid-2">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 12px;">Full Legal Name</label>
+              <input type="text" id="reg-name" class="form-input" placeholder="Manjit Singh" required style="padding: 9px 12px; font-size: 12.5px;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 12px;">Corporate Work Email</label>
+              <input type="email" id="reg-email" class="form-input" placeholder="name@enterprise.com" required style="padding: 9px 12px; font-size: 12.5px;">
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 12px;">Organization / Tenant Name</label>
+              <input type="text" id="reg-org" class="form-input" placeholder="Global Enterprise Ltd" required style="padding: 9px 12px; font-size: 12.5px;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 12px;">Primary Platform Role</label>
+              <select id="reg-role" class="form-select" style="padding: 9px 12px; font-size: 12.5px;">
+                <option value="Data Architect">Data Architect</option>
+                <option value="Data Steward">Data Steward</option>
+                <option value="Business Analyst">Business Analyst</option>
+                <option value="Platform Administrator">Platform Administrator</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 12px;">Enterprise Password</label>
+            <input 
+              type="password" 
+              id="reg-password" 
+              class="form-input" 
+              placeholder="Min. 12 characters, numbers & symbols" 
+              required 
+              style="padding: 9px 12px; font-size: 12.5px;"
+              oninput="window.unifyUpdatePasswordStrength(this.value)"
+            >
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+              <div class="bar-track" style="flex: 1; height: 4px;">
+                <div class="bar-fill" id="pwd-strength-bar" style="width: 25%; background: #ef4444;"></div>
+              </div>
+              <span id="pwd-strength-text" style="font-size: 10.5px; color: #ef4444; width: 60px; text-align: right;">Weak</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 4px; padding: 10px; background: var(--bg-input); border: 1px solid var(--border-default); border-radius: var(--radius-md); font-size: 11.5px; color: var(--text-secondary);">
+            <label style="display: flex; gap: 8px; align-items: flex-start; cursor: pointer;">
+              <input type="checkbox" id="reg-terms" required style="margin-top: 2px;">
+              <span>I acknowledge that this workspace operates in SOC2 Type II compliance and agree to corporate MDM stewardship governance terms.</span>
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="padding: 10px; font-size: 13px; font-weight: 600; width: 100%; margin-top: 6px;">
+            Provision Workspace & Sign In →
+          </button>
+        </form>
+
+        <!-- Back to login -->
+        <div style="text-align: center; margin-top: 18px; font-size: 12px; color: var(--text-secondary);">
+          Already have an authorized account?
+          <a href="#/login" style="color: #38bdf8; text-decoration: none; font-weight: 500; margin-left: 4px;">Sign In →</a>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+
+// ==================== src/pages/auth/forgotPassword.js ====================
+// Authentication Page: Password Recovery (Route: /forgot-password)
+async function renderForgotPasswordPage() {
+  return `
+    <div style="min-height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 20%, #171b34 0%, #080b12 70%); padding: 20px; box-sizing: border-box;">
+      <div style="width: 100%; max-width: 440px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 32px; box-shadow: var(--shadow-lg);">
+        
+        <div style="text-align: center; margin-bottom: 22px;">
+          <div style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #06b6d4); font-weight: 800; font-size: 20px; color: #fff; margin-bottom: 12px; box-shadow: 0 0 16px rgba(99, 102, 241, 0.4);">
+            U
+          </div>
+          <h1 style="font-family: var(--font-display); font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.3px;">
+            Reset Enterprise Password
+          </h1>
+          <p style="font-size: 12.5px; color: var(--text-secondary); margin-top: 4px;">
+            Enter your corporate email to receive a secure recovery magic link
+          </p>
+        </div>
+
+        <form onsubmit="window.unifyHandleForgot(event)" style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 12px;">Corporate Work Email</label>
+            <input type="email" id="forgot-email" class="form-input" placeholder="name@enterprise.com" required style="padding: 10px 12px; font-size: 13px;">
+          </div>
+
+          <div id="forgot-success-banner" style="display: none; padding: 10px 14px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius-md); font-size: 12px; color: #34d399;">
+            ✓ If this email matches an authorized enterprise user, a secure cryptographic reset link has been dispatched.
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="padding: 10px; font-size: 13px; font-weight: 600; width: 100%;">
+            Send Recovery Magic Link →
+          </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 20px; font-size: 12px; color: var(--text-secondary);">
+          Remembered your password?
+          <a href="#/login" style="color: #38bdf8; text-decoration: none; font-weight: 500; margin-left: 4px;">Return to Sign In →</a>
+        </div>
+
+      </div>
     </div>
   `;
 }
@@ -5390,8 +5680,16 @@ async function renderSettingsPage() {
 
 
 
+// Authentication Pages (Section 2.1)
+
+
+
+
 // Setup Global Route Map (Section 50)
 router
+  .addRoute('/login', renderLoginPage)
+  .addRoute('/register', renderRegisterPage)
+  .addRoute('/forgot-password', renderForgotPasswordPage)
   .addRoute('/', renderOverviewPage)
   // Data Foundation
   .addRoute('/data-foundation/sources', renderSourcesPage)
@@ -5671,15 +5969,98 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+// Authentication Handlers (Section 2.1)
+window.unifyHandleLogin = (e) => {
+  e.preventDefault();
+  const email = document.getElementById('login-email')?.value || 'manjit@unify.ai';
+  store.login({
+    name: email.split('@')[0].replace('.', ' '),
+    email: email,
+    role: 'Data Architect',
+    tenant: 'Global Enterprise Ltd'
+  });
+  window.location.hash = '#/';
+};
+
+window.unifyQuickLogin = (name, role, email) => {
+  store.login({ name, role, email, tenant: 'Global Enterprise Ltd' });
+  window.location.hash = '#/';
+};
+
+window.unifyLoginSSO = (provider) => {
+  store.login({
+    name: 'Manjit Singh',
+    role: 'Data Architect',
+    email: 'manjit@unify.ai',
+    tenant: `${provider} SSO Verified`
+  });
+  window.location.hash = '#/';
+};
+
+window.unifyLogout = () => {
+  store.logout();
+};
+
+window.unifyHandleRegister = (e) => {
+  e.preventDefault();
+  const name = document.getElementById('reg-name')?.value || 'New User';
+  const email = document.getElementById('reg-email')?.value || 'user@enterprise.com';
+  const role = document.getElementById('reg-role')?.value || 'Data Architect';
+  const org = document.getElementById('reg-org')?.value || 'Enterprise Tenant';
+
+  store.login({ name, email, role, tenant: org });
+  alert(`Enterprise tenant for ${org} provisioned successfully. Welcome, ${name}!`);
+  window.location.hash = '#/';
+};
+
+window.unifyHandleForgot = (e) => {
+  e.preventDefault();
+  const banner = document.getElementById('forgot-success-banner');
+  if (banner) banner.style.display = 'block';
+};
+
+window.unifyUpdatePasswordStrength = (val) => {
+  const bar = document.getElementById('pwd-strength-bar');
+  const text = document.getElementById('pwd-strength-text');
+  if (!bar || !text) return;
+  if (val.length < 6) {
+    bar.style.width = '25%';
+    bar.style.background = '#ef4444';
+    text.style.color = '#ef4444';
+    text.innerText = 'Weak';
+  } else if (val.length < 10) {
+    bar.style.width = '60%';
+    bar.style.background = '#fbbf24';
+    text.style.color = '#fbbf24';
+    text.innerText = 'Medium';
+  } else {
+    bar.style.width = '100%';
+    bar.style.background = '#34d399';
+    text.style.color = '#34d399';
+    text.innerText = 'Strong';
+  }
+};
+
+window.unifyMountShell = () => {
+  const appRoot = document.getElementById('app-root');
+  if (appRoot && !document.getElementById('main-content-viewport')) {
+    appRoot.innerHTML = renderAppShell();
+    const viewport = document.getElementById('main-content-viewport');
+    router.setContainer(viewport);
+  }
+};
+
 // App Initialization
 function initApp() {
   const appRoot = document.getElementById('app-root');
   if (!appRoot) return;
 
-  appRoot.innerHTML = renderAppShell();
+  const hash = window.location.hash || '#/';
+  const isAuthRoute = hash === '#/login' || hash === '#/register' || hash === '#/forgot-password';
 
-  const viewport = document.getElementById('main-content-viewport');
-  router.setContainer(viewport);
+  if (!isAuthRoute) {
+    window.unifyMountShell();
+  }
 
   // Subscribe to store updates to keep sidebar, topbar, journey banner in sync
   store.subscribe((state) => {

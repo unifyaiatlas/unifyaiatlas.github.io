@@ -56,8 +56,16 @@ import { renderUsersPage } from './pages/admin/users.js';
 import { renderAiProvidersPage } from './pages/admin/aiProviders.js';
 import { renderSettingsPage } from './pages/admin/settings.js';
 
+// Authentication Pages (Section 2.1)
+import { renderLoginPage } from './pages/auth/login.js';
+import { renderRegisterPage } from './pages/auth/register.js';
+import { renderForgotPasswordPage } from './pages/auth/forgotPassword.js';
+
 // Setup Global Route Map (Section 50)
 router
+  .addRoute('/login', renderLoginPage)
+  .addRoute('/register', renderRegisterPage)
+  .addRoute('/forgot-password', renderForgotPasswordPage)
   .addRoute('/', renderOverviewPage)
   // Data Foundation
   .addRoute('/data-foundation/sources', renderSourcesPage)
@@ -337,15 +345,98 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+// Authentication Handlers (Section 2.1)
+window.unifyHandleLogin = (e) => {
+  e.preventDefault();
+  const email = document.getElementById('login-email')?.value || 'manjit@unify.ai';
+  store.login({
+    name: email.split('@')[0].replace('.', ' '),
+    email: email,
+    role: 'Data Architect',
+    tenant: 'Global Enterprise Ltd'
+  });
+  window.location.hash = '#/';
+};
+
+window.unifyQuickLogin = (name, role, email) => {
+  store.login({ name, role, email, tenant: 'Global Enterprise Ltd' });
+  window.location.hash = '#/';
+};
+
+window.unifyLoginSSO = (provider) => {
+  store.login({
+    name: 'Manjit Singh',
+    role: 'Data Architect',
+    email: 'manjit@unify.ai',
+    tenant: `${provider} SSO Verified`
+  });
+  window.location.hash = '#/';
+};
+
+window.unifyLogout = () => {
+  store.logout();
+};
+
+window.unifyHandleRegister = (e) => {
+  e.preventDefault();
+  const name = document.getElementById('reg-name')?.value || 'New User';
+  const email = document.getElementById('reg-email')?.value || 'user@enterprise.com';
+  const role = document.getElementById('reg-role')?.value || 'Data Architect';
+  const org = document.getElementById('reg-org')?.value || 'Enterprise Tenant';
+
+  store.login({ name, email, role, tenant: org });
+  alert(`Enterprise tenant for ${org} provisioned successfully. Welcome, ${name}!`);
+  window.location.hash = '#/';
+};
+
+window.unifyHandleForgot = (e) => {
+  e.preventDefault();
+  const banner = document.getElementById('forgot-success-banner');
+  if (banner) banner.style.display = 'block';
+};
+
+window.unifyUpdatePasswordStrength = (val) => {
+  const bar = document.getElementById('pwd-strength-bar');
+  const text = document.getElementById('pwd-strength-text');
+  if (!bar || !text) return;
+  if (val.length < 6) {
+    bar.style.width = '25%';
+    bar.style.background = '#ef4444';
+    text.style.color = '#ef4444';
+    text.innerText = 'Weak';
+  } else if (val.length < 10) {
+    bar.style.width = '60%';
+    bar.style.background = '#fbbf24';
+    text.style.color = '#fbbf24';
+    text.innerText = 'Medium';
+  } else {
+    bar.style.width = '100%';
+    bar.style.background = '#34d399';
+    text.style.color = '#34d399';
+    text.innerText = 'Strong';
+  }
+};
+
+window.unifyMountShell = () => {
+  const appRoot = document.getElementById('app-root');
+  if (appRoot && !document.getElementById('main-content-viewport')) {
+    appRoot.innerHTML = renderAppShell();
+    const viewport = document.getElementById('main-content-viewport');
+    router.setContainer(viewport);
+  }
+};
+
 // App Initialization
 function initApp() {
   const appRoot = document.getElementById('app-root');
   if (!appRoot) return;
 
-  appRoot.innerHTML = renderAppShell();
+  const hash = window.location.hash || '#/';
+  const isAuthRoute = hash === '#/login' || hash === '#/register' || hash === '#/forgot-password';
 
-  const viewport = document.getElementById('main-content-viewport');
-  router.setContainer(viewport);
+  if (!isAuthRoute) {
+    window.unifyMountShell();
+  }
 
   // Subscribe to store updates to keep sidebar, topbar, journey banner in sync
   store.subscribe((state) => {

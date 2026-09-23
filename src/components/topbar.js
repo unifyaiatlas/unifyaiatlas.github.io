@@ -44,15 +44,18 @@ export function renderTopbar() {
           <span>Journey Step ${state.currentJourneyStep} →</span>
         </button>
 
-        <!-- User Profile Pill -->
+        <!-- User Profile & Sign Out (Section 2.1) -->
         <div style="display: flex; align-items: center; gap: 8px; padding-left: 8px; border-left: 1px solid var(--border-subtle);">
-          <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #4f46e5, #06b6d4); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 12px;">
-            MS
+          <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #4f46e5, #06b6d4); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 11px;">
+            ${(state.currentUser?.name || 'MS').split(' ').map(n => n[0]).join('').slice(0, 2)}
           </div>
           <div style="display: flex; flex-direction: column;">
-            <span style="font-size: 12px; font-weight: 600; color: #fff;">Manjit Singh</span>
+            <span style="font-size: 12px; font-weight: 600; color: #fff;">${state.currentUser?.name || 'Manjit Singh'}</span>
             <span style="font-size: 10px; color: var(--text-muted);">${state.activePersona}</span>
           </div>
+          <button class="btn btn-ghost btn-sm" onclick="window.unifyLogout()" title="Sign Out of Enterprise Fabric" style="padding: 4px 6px; font-size: 11px; margin-left: 4px; color: var(--text-muted);">
+            Sign Out ➔
+          </button>
         </div>
       </div>
     </header>
