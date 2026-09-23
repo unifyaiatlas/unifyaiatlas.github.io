@@ -58,7 +58,7 @@ export function renderTopbar() {
             ${(state.currentUser?.name || 'MS').split(' ').map(n => n[0]).join('').slice(0, 2)}
           </div>
           <div style="display: flex; flex-direction: column;">
-            <span style="font-size: 12px; font-weight: 600; color: #fff;">${state.currentUser?.name || 'Manjit Singh'}</span>
+            <span style="font-size: 12px; font-weight: 600; color: #fff;">${state.currentUser?.name || 'John Smith'}</span>
             <span style="font-size: 10px; color: var(--text-muted);">${state.activePersona}</span>
           </div>
           <button class="btn btn-ghost btn-sm" onclick="window.unifyLogout()" title="Sign Out of Enterprise Fabric" style="padding: 4px 6px; font-size: 11px; margin-left: 4px; color: var(--text-muted);">

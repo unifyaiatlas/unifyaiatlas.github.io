@@ -111,7 +111,7 @@ export const initialSchemaMappings = [
     canonicalType: 'string',
     confidence: 99,
     triadStatus: 'USER DECISION',
-    decidedBy: 'Manjit (Data Architect)',
+    decidedBy: 'John (Data Architect)',
     reasoning: 'Primary key matches canonical record identification standard.'
   },
   {
@@ -123,7 +123,7 @@ export const initialSchemaMappings = [
     canonicalType: 'string',
     confidence: 98,
     triadStatus: 'USER DECISION',
-    decidedBy: 'Manjit (Data Architect)',
+    decidedBy: 'John (Data Architect)',
     reasoning: 'AI matched organization legal name with semantic embedding score 0.984.'
   },
   {
@@ -344,7 +344,7 @@ export const initialAIProviders = [
 ];
 
 export const initialUsers = [
-  { id: 'usr-1', name: 'Manjit Singh', email: 'manjit@unify.ai', role: 'Data Architect', department: 'Enterprise Data Office', status: 'Active' },
+  { id: 'usr-1', name: 'John Smith', email: 'John@unify.ai', role: 'Data Architect', department: 'Enterprise Data Office', status: 'Active' },
   { id: 'usr-2', name: 'Elena Rostova', email: 'elena@unify.ai', role: 'Data Steward', department: 'MDM Governance Group', status: 'Active' },
   { id: 'usr-3', name: 'Marcus Vance', email: 'marcus@unify.ai', role: 'Analyst', department: 'Commercial Operations', status: 'Active' },
   { id: 'usr-4', name: 'Sarah Chen', email: 'sarah@unify.ai', role: 'Administrator', department: 'Cloud Infrastructure', status: 'Active' }

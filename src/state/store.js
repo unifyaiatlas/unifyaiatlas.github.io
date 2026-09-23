@@ -26,8 +26,8 @@ class AppStore {
       activePersona: 'Data Architect', // Data Architect, Data Steward, Business User, Platform Administrator
       isAuthenticated: true,
       currentUser: {
-        name: 'Manjit Singh',
-        email: 'manjit@unify.ai',
+        name: 'John Smith',
+        email: 'John@unify.ai',
         role: 'Data Architect',
         tenant: 'Global Enterprise Ltd'
       },

@@ -1,1069 +1,1069 @@
 // Unify AI Enterprise Application Bundle
-(function() {
+(function () {
 
-// ==================== src/services/mockData.js ====================
-// Comprehensive Enterprise Mock Data Store for Unify AI Fabric
-const initialSources = [
-  {
-    id: 'src-salesforce',
-    name: 'Salesforce CRM',
-    type: 'CRM',
-    entity: 'Account',
-    access: 'Zero-Copy',
-    status: 'Connected',
-    records: '2,048,190',
-    recordsRaw: 2048190,
-    lastSync: 'Real-time (CDC)',
-    latency: '42ms',
-    objectsCount: 14,
-    health: '100%'
-  },
-  {
-    id: 'src-sap',
-    name: 'SAP ERP S/4HANA',
-    type: 'ERP',
-    entity: 'Customer',
-    access: 'Materialized',
-    status: 'Healthy',
-    records: '8,124,500',
-    recordsRaw: 8124500,
-    lastSync: '10 min ago',
-    latency: '180ms',
-    objectsCount: 22,
-    health: '99.4%'
-  },
-  {
-    id: 'src-postgres',
-    name: 'PostgreSQL Billing DB',
-    type: 'Database',
-    entity: 'Customer',
-    access: 'Zero-Copy',
-    status: 'Connected',
-    records: '4,210,000',
-    recordsRaw: 4210000,
-    lastSync: 'Real-time',
-    latency: '18ms',
-    objectsCount: 8,
-    health: '100%'
-  },
-  {
-    id: 'src-databricks',
-    name: 'Databricks Unity Catalog',
-    type: 'Lakehouse',
-    entity: 'Customer_Golden_Inbound',
-    access: 'Zero-Copy',
-    status: 'Connected',
-    records: '28,450,000',
-    recordsRaw: 28450000,
-    lastSync: '3 min ago',
-    latency: '65ms',
-    objectsCount: 35,
-    health: '99.9%'
-  }
-];
-const initialDiscoveredDatasets = [
-  {
-    id: 'disc-customer',
-    title: 'Potential Customer Entity',
-    source: 'Salesforce & SAP Joint Pool',
-    columns: 46,
-    records: '10.1M',
-    identifiers: ['email', 'tax_id', 'sfdc_id', 'sap_kunnr'],
-    piiFields: ['email', 'phone', 'first_name', 'billing_address'],
-    duplicatesEstimate: '14.2% (~1.43M pairs)',
-    suggestedDomain: 'Customer',
-    confidence: '98.4%',
-    status: 'Ready for Mapping'
-  },
-  {
-    id: 'disc-product',
-    title: 'Potential Product Entity',
-    source: 'SAP ERP & PIM Catalog',
-    columns: 28,
-    records: '482,000',
-    identifiers: ['sku', 'upc', 'matnr'],
-    piiFields: ['None'],
-    duplicatesEstimate: '3.8% (~18K pairs)',
-    suggestedDomain: 'Product',
-    confidence: '94.1%',
-    status: 'Discovered'
-  },
-  {
-    id: 'disc-location',
-    title: 'Potential Location Entity',
-    source: 'Logistics Facility Registry',
-    columns: 18,
-    records: '14,200',
-    identifiers: ['facility_code', 'geo_hash'],
-    piiFields: ['None'],
-    duplicatesEstimate: '1.2%',
-    suggestedDomain: 'Location',
-    confidence: '91.8%',
-    status: 'Discovered'
-  }
-];
-const initialSchemaMappings = [
-  {
-    id: 'map-1',
-    sourceField: 'Id',
-    sourceType: 'string(18)',
-    sourceSample: '0015g00000Uf93rAAB',
-    canonicalField: 'account.identifier',
-    canonicalType: 'string',
-    confidence: 99,
-    triadStatus: 'USER DECISION',
-    decidedBy: 'Manjit (Data Architect)',
-    reasoning: 'Primary key matches canonical record identification standard.'
-  },
-  {
-    id: 'map-2',
-    sourceField: 'Name',
-    sourceType: 'string(255)',
-    sourceSample: 'Apex Global Technologies Ltd',
-    canonicalField: 'organization.name',
-    canonicalType: 'string',
-    confidence: 98,
-    triadStatus: 'USER DECISION',
-    decidedBy: 'Manjit (Data Architect)',
-    reasoning: 'AI matched organization legal name with semantic embedding score 0.984.'
-  },
-  {
-    id: 'map-3',
-    sourceField: 'BillingStreet',
-    sourceType: 'string(255)',
-    sourceSample: '104 Park Street, Suite 400',
-    canonicalField: 'address.line1',
-    canonicalType: 'string',
-    confidence: 96,
-    triadStatus: 'AI RECOMMENDATION',
-    decidedBy: null,
-    reasoning: 'Street level address detected via regex and NER address parsing.'
-  },
-  {
-    id: 'map-4',
-    sourceField: 'BillingCity',
-    sourceType: 'string(40)',
-    sourceSample: 'Kolkata',
-    canonicalField: 'address.city',
-    canonicalType: 'string',
-    confidence: 97,
-    triadStatus: 'AI RECOMMENDATION',
-    decidedBy: null,
-    reasoning: 'ISO-matched city ontology entity.'
-  },
-  {
-    id: 'map-5',
-    sourceField: 'BillingCountry',
-    sourceType: 'string(80)',
-    sourceSample: 'India',
-    canonicalField: 'address.country',
-    canonicalType: 'string',
-    confidence: 99,
-    triadStatus: 'AI RECOMMENDATION',
-    decidedBy: null,
-    reasoning: 'Standard ISO 3166-1 alpha-2 / full country normalization candidate.'
-  },
-  {
-    id: 'map-6',
-    sourceField: 'Phone',
-    sourceType: 'phone',
-    sourceSample: '+91 98765 43210',
-    canonicalField: 'contact.phone',
-    canonicalType: 'phone_e164',
-    confidence: 95,
-    triadStatus: 'AI RECOMMENDATION',
-    decidedBy: null,
-    reasoning: 'E.164 phone standardizer recommended.'
-  },
-  {
-    id: 'map-7',
-    sourceField: 'Website',
-    sourceType: 'url',
-    sourceSample: 'https://apexglobal.io',
-    canonicalField: 'organization.website',
-    canonicalType: 'url',
-    confidence: 93,
-    triadStatus: 'AI RECOMMENDATION',
-    decidedBy: null,
-    reasoning: 'Domain normalization to FQDN host.'
-  }
-];
-const initialProfiles = [
-  { attribute: 'organization.name', completeness: 99.4, uniqueness: 88.2, validity: 98.7, nullRate: '0.6%', samples: ['Apex Global', 'Acme Corp', 'Tata Consultancy'] },
-  { attribute: 'contact.email', completeness: 94.8, uniqueness: 91.5, validity: 96.2, nullRate: '5.2%', samples: ['robert@abc.com', 'contact@apex.io'] },
-  { attribute: 'contact.phone', completeness: 89.1, uniqueness: 86.4, validity: 92.0, nullRate: '10.9%', samples: ['+919876543210', '+14155552671'] },
-  { attribute: 'address.country', completeness: 98.9, uniqueness: 12.1, validity: 99.8, nullRate: '1.1%', samples: ['India', 'United States', 'Germany'] },
-  { attribute: 'account.identifier', completeness: 100.0, uniqueness: 100.0, validity: 100.0, nullRate: '0.0%', samples: ['CUST-00192837', 'CRM-10231'] }
-];
-const initialDQRules = [
-  { id: 'dq-1', name: 'Email Required & Valid Format', entity: 'Customer', attribute: 'contact.email', type: 'Format', severity: 'Error', status: 'Active', failureRate: '3.8%', totalChecked: '4.8M' },
-  { id: 'dq-2', name: 'Valid E.164 Phone Number', entity: 'Customer', attribute: 'contact.phone', type: 'Format', severity: 'Warning', status: 'Active', failureRate: '7.9%', totalChecked: '4.8M' },
-  { id: 'dq-3', name: 'Mandatory Legal Entity Name', entity: 'Customer', attribute: 'organization.name', type: 'Required', severity: 'Error', status: 'Active', failureRate: '0.6%', totalChecked: '4.8M' },
-  { id: 'dq-4', name: 'ISO-3166 Standard Country Code', entity: 'Customer', attribute: 'address.country', type: 'Reference', severity: 'Warning', status: 'Active', failureRate: '1.2%', totalChecked: '4.8M' }
-];
-const initialDQIssues = [
-  {
-    id: 'dqi-101',
-    recordId: 'CRM-102938',
-    entity: 'Customer',
-    attribute: 'contact.email',
-    invalidValue: 'robert.smith@@gmail..com',
-    rule: 'Email Required & Valid Format',
-    severity: 'Error',
-    reason: 'Consecutive special characters violate RFC 5322 syntax.',
-    suggestedCorrection: 'robert.smith@gmail.com',
-    triadStatus: 'AI RECOMMENDATION',
-    status: 'Pending'
-  },
-  {
-    id: 'dqi-102',
-    recordId: 'ERP-88391',
-    entity: 'Customer',
-    attribute: 'address.country',
-    invalidValue: 'Ind.',
-    rule: 'ISO-3166 Standard Country Code',
-    severity: 'Warning',
-    reason: 'Abbreviated country name not in ISO reference table.',
-    suggestedCorrection: 'India (IN)',
-    triadStatus: 'AI RECOMMENDATION',
-    status: 'Pending'
-  }
-];
-const initialMatchStrategies = [
-  {
-    id: 'strat-customer-v4',
-    name: 'Customer Standard',
-    domain: 'Customer',
-    version: 'v4',
-    autoThreshold: 95,
-    reviewThreshold: 85,
-    status: 'Active',
-    rulesCount: 5,
-    description: 'High-precision resolution combining exact email/phone with phonetic & Levenshtein organization matching.'
-  },
-  {
-    id: 'strat-account-v2',
-    name: 'Account Corporate',
-    domain: 'Account',
-    version: 'v2',
-    autoThreshold: 92,
-    reviewThreshold: 80,
-    status: 'Draft',
-    rulesCount: 4,
-    description: 'B2B corporate matching incorporating Dun & Bradstreet D-U-N-S hierarchy and domain clustering.'
-  }
-];
-const initialMatches = [
-  {
-    id: 'match-101',
-    sourceA: { id: 'CRM-10231', source: 'Salesforce CRM', name: 'Robert Smith', email: 'robert@abc.com', phone: '+919876543210', city: 'Kolkata', revenue: '$1,200,000' },
-    sourceB: { id: 'ERP-88391', source: 'SAP ERP', name: 'Robert J Smith', email: 'robert@abc.com', phone: '+919876543210', city: 'Kolkata', revenue: '$1,450,000' },
-    confidence: 96.7,
-    status: 'Auto Match',
-    strategy: 'Customer Standard v4',
-    breakdown: [
-      { attribute: 'Email', method: 'Exact', score: 100, weight: 40, contribution: '+40' },
-      { attribute: 'Phone', method: 'Exact', score: 100, weight: 25, contribution: '+25' },
-      { attribute: 'Name', method: 'Fuzzy (Jaro-Winkler)', score: 97, weight: 20, contribution: '+19' },
-      { attribute: 'Address', method: 'City Match', score: 91, weight: 15, contribution: '+13' }
-    ]
-  },
-  {
-    id: 'match-102',
-    sourceA: { id: 'CRM-12221', source: 'Salesforce CRM', name: 'Apex Tech Solutions', email: 'billing@apexsolutions.com', phone: '+14155552671', city: 'San Francisco', revenue: '$4,500,000' },
-    sourceB: { id: 'ERP-71231', source: 'SAP ERP', name: 'Apex Technologies LLC', email: 'accounts@apexsolutions.com', phone: '+14155552671', city: 'San Francisco', revenue: '$4,800,000' },
-    confidence: 89.2,
-    status: 'Requires Review',
-    strategy: 'Customer Standard v4',
-    breakdown: [
-      { attribute: 'Email', method: 'Domain Match', score: 85, weight: 40, contribution: '+34' },
-      { attribute: 'Phone', method: 'Exact', score: 100, weight: 25, contribution: '+25' },
-      { attribute: 'Name', method: 'AI-Assisted Legal Strip', score: 92, weight: 20, contribution: '+18' },
-      { attribute: 'Address', method: 'Exact', score: 100, weight: 15, contribution: '+12' }
-    ]
-  }
-];
-const initialGoldenEntities = [
-  {
-    id: 'CUST-00192837',
-    name: 'Robert Smith',
-    domain: 'Customer',
-    sourceCount: 2,
-    confidence: '97.4%',
-    status: 'Active',
-    lastUpdated: '12 min ago',
-    attributes: {
-      name: { value: 'Robert J Smith', source: 'SAP ERP', confidence: '99%', updated: '2026-09-23 10:14' },
-      email: { value: 'robert@abc.com', source: 'Salesforce CRM', confidence: '99%', updated: '2026-09-23 10:14' },
-      phone: { value: '+91 98765 43210', source: 'Salesforce CRM', confidence: '98%', updated: '2026-09-23 10:14' },
-      city: { value: 'Kolkata', source: 'Consensus (2/2)', confidence: '100%', updated: '2026-09-23 10:14' },
-      country: { value: 'India', source: 'Consensus (2/2)', confidence: '100%', updated: '2026-09-23 10:14' },
-      revenue: { value: '$1,450,000', source: 'SAP ERP (Materialized Winner)', confidence: '95%', updated: '2026-09-23 10:14' }
-    },
-    sources: [
-      { source: 'Salesforce CRM', id: 'CRM-10231', status: 'Active Contributor', mergedAt: '2026-09-22 14:30' },
-      { source: 'SAP ERP', id: 'ERP-88391', status: 'Active Contributor', mergedAt: '2026-09-22 14:30' }
-    ],
-    history: [
-      { date: 'Today, 10:14 AM', event: 'Survivorship Re-calculation', details: 'Revenue updated from SAP ERP winning rule.', actor: 'System Rule #4' },
-      { date: 'Sep 22, 14:30', event: 'Match Approved & Merged', details: 'CRM-10231 merged with ERP-88391 with 96.7% match confidence.', actor: 'Elena Rostova (Steward)' },
-      { date: 'Sep 20, 09:12', event: 'Golden Entity Created', details: 'Initial record established from Salesforce Account import.', actor: 'Pipeline Job #2049' }
-    ]
-  },
-  {
-    id: 'CUST-00284910',
-    name: 'Apex Global Technologies',
-    domain: 'Customer',
-    sourceCount: 3,
-    confidence: '98.9%',
-    status: 'Active',
-    lastUpdated: '1 hour ago',
-    attributes: {
-      name: { value: 'Apex Global Technologies Ltd', source: 'Salesforce CRM', confidence: '98%', updated: '2026-09-23 09:00' },
-      email: { value: 'contact@apexglobal.io', source: 'PostgreSQL Billing', confidence: '97%', updated: '2026-09-23 09:00' }
-    }
-  }
-];
-const initialJobs = [
-  { id: 'job-9821', name: 'Continuous CDC Ingestion - Salesforce', type: 'Zero-Copy Sync', source: 'Salesforce CRM', entity: 'Account', status: 'Running', records: '14,209', duration: 'Ongoing', started: '10 min ago' },
-  { id: 'job-9820', name: 'Customer Reconciliation & Matching', type: 'Unification Funnel', source: 'Multi-Source', entity: 'Customer', status: 'Completed', records: '2,481,200', duration: '4m 12s', started: '1 hour ago' },
-  { id: 'job-9819', name: 'SAP S/4HANA Materialization Delta', type: 'Batch Extract', source: 'SAP ERP', entity: 'Customer', status: 'Completed', records: '128,400', duration: '1m 45s', started: '2 hours ago' },
-  { id: 'job-9818', name: 'DQ Profiling & Anomaly Scan', type: 'Data Quality', source: 'Databricks', entity: 'All Entities', status: 'Completed', records: '18.2M', duration: '12m 30s', started: '5 hours ago' }
-];
-const initialAIProviders = [
-  { id: 'ai-google', provider: 'Google Cloud Vertex AI', model: 'Gemini 1.5 Pro', status: 'Active', latency: '240ms', purpose: 'Semantic Schema Mapping, LLM Entity Resolution, Match Explanation' },
-  { id: 'ai-openrouter', provider: 'OpenRouter Enterprise', model: 'Meta Llama 3.1 70B', status: 'Active', latency: '310ms', purpose: 'DQ Rule Generation, Natural Language Copilot' },
-  { id: 'ai-anthropic', provider: 'Anthropic Bedrock', model: 'Claude 3.5 Sonnet', status: 'Available', latency: '290ms', purpose: 'Complex Multi-Table Survivorship Reasoning' }
-];
-const initialUsers = [
-  { id: 'usr-1', name: 'Manjit Singh', email: 'manjit@unify.ai', role: 'Data Architect', department: 'Enterprise Data Office', status: 'Active' },
-  { id: 'usr-2', name: 'Elena Rostova', email: 'elena@unify.ai', role: 'Data Steward', department: 'MDM Governance Group', status: 'Active' },
-  { id: 'usr-3', name: 'Marcus Vance', email: 'marcus@unify.ai', role: 'Analyst', department: 'Commercial Operations', status: 'Active' },
-  { id: 'usr-4', name: 'Sarah Chen', email: 'sarah@unify.ai', role: 'Administrator', department: 'Cloud Infrastructure', status: 'Active' }
-];
-
-
-// ==================== src/services/repository.js ====================
-// Service & Repository Layer — Abstraction over Enterprise Unify AI APIs
-
-
-class DataRepository {
-  constructor() {
-    this.sources = [...initialSources];
-    this.discovered = [...initialDiscoveredDatasets];
-    this.mappings = [...initialSchemaMappings];
-    this.profiles = [...initialProfiles];
-    this.rules = [...initialDQRules];
-    this.issues = [...initialDQIssues];
-    this.strategies = [...initialMatchStrategies];
-    this.matches = [...initialMatches];
-    this.golden = [...initialGoldenEntities];
-    this.jobs = [...initialJobs];
-    this.aiProviders = [...initialAIProviders];
-    this.users = [...initialUsers];
-  }
-
-  // Sources
-  async getSources() {
-    return [...this.sources];
-  }
-
-  async getSource(id) {
-    return this.sources.find(s => s.id === id) || null;
-  }
-
-  async addSource(sourceData) {
-    const newSource = {
-      id: `src-${Date.now()}`,
+  // ==================== src/services/mockData.js ====================
+  // Comprehensive Enterprise Mock Data Store for Unify AI Fabric
+  const initialSources = [
+    {
+      id: 'src-salesforce',
+      name: 'Salesforce CRM',
+      type: 'CRM',
+      entity: 'Account',
+      access: 'Zero-Copy',
       status: 'Connected',
-      records: '0',
-      recordsRaw: 0,
-      lastSync: 'Just now',
-      health: '100%',
-      objectsCount: (sourceData.selectedObjects || []).length,
-      ...sourceData
-    };
-    this.sources.unshift(newSource);
-    return newSource;
-  }
-
-  // Discovery
-  async getDiscoveredDatasets() {
-    return [...this.discovered];
-  }
-
-  // Schema Mappings
-  async getSchemaMappings() {
-    return [...this.mappings];
-  }
-
-  async updateMappingDecision(mappingId, status, user = 'Current User') {
-    const map = this.mappings.find(m => m.id === mappingId);
-    if (map) {
-      map.triadStatus = status; // 'USER DECISION' or 'AI RECOMMENDATION'
-      map.decidedBy = status === 'USER DECISION' ? `${user} (Approved)` : null;
+      records: '2,048,190',
+      recordsRaw: 2048190,
+      lastSync: 'Real-time (CDC)',
+      latency: '42ms',
+      objectsCount: 14,
+      health: '100%'
+    },
+    {
+      id: 'src-sap',
+      name: 'SAP ERP S/4HANA',
+      type: 'ERP',
+      entity: 'Customer',
+      access: 'Materialized',
+      status: 'Healthy',
+      records: '8,124,500',
+      recordsRaw: 8124500,
+      lastSync: '10 min ago',
+      latency: '180ms',
+      objectsCount: 22,
+      health: '99.4%'
+    },
+    {
+      id: 'src-postgres',
+      name: 'PostgreSQL Billing DB',
+      type: 'Database',
+      entity: 'Customer',
+      access: 'Zero-Copy',
+      status: 'Connected',
+      records: '4,210,000',
+      recordsRaw: 4210000,
+      lastSync: 'Real-time',
+      latency: '18ms',
+      objectsCount: 8,
+      health: '100%'
+    },
+    {
+      id: 'src-databricks',
+      name: 'Databricks Unity Catalog',
+      type: 'Lakehouse',
+      entity: 'Customer_Golden_Inbound',
+      access: 'Zero-Copy',
+      status: 'Connected',
+      records: '28,450,000',
+      recordsRaw: 28450000,
+      lastSync: '3 min ago',
+      latency: '65ms',
+      objectsCount: 35,
+      health: '99.9%'
     }
-    return map;
-  }
-
-  async acceptAllHighConfidence(user = 'Manjit (Data Architect)') {
-    this.mappings.forEach(m => {
-      if (m.confidence >= 95) {
-        m.triadStatus = 'USER DECISION';
-        m.decidedBy = user;
-      }
-    });
-    return [...this.mappings];
-  }
-
-  // Data Profiles
-  async getDataProfiles() {
-    return [...this.profiles];
-  }
-
-  // DQ Rules & Issues
-  async getDQRules() {
-    return [...this.rules];
-  }
-
-  async addDQRule(rule) {
-    const newRule = {
-      id: `dq-${Date.now()}`,
+  ];
+  const initialDiscoveredDatasets = [
+    {
+      id: 'disc-customer',
+      title: 'Potential Customer Entity',
+      source: 'Salesforce & SAP Joint Pool',
+      columns: 46,
+      records: '10.1M',
+      identifiers: ['email', 'tax_id', 'sfdc_id', 'sap_kunnr'],
+      piiFields: ['email', 'phone', 'first_name', 'billing_address'],
+      duplicatesEstimate: '14.2% (~1.43M pairs)',
+      suggestedDomain: 'Customer',
+      confidence: '98.4%',
+      status: 'Ready for Mapping'
+    },
+    {
+      id: 'disc-product',
+      title: 'Potential Product Entity',
+      source: 'SAP ERP & PIM Catalog',
+      columns: 28,
+      records: '482,000',
+      identifiers: ['sku', 'upc', 'matnr'],
+      piiFields: ['None'],
+      duplicatesEstimate: '3.8% (~18K pairs)',
+      suggestedDomain: 'Product',
+      confidence: '94.1%',
+      status: 'Discovered'
+    },
+    {
+      id: 'disc-location',
+      title: 'Potential Location Entity',
+      source: 'Logistics Facility Registry',
+      columns: 18,
+      records: '14,200',
+      identifiers: ['facility_code', 'geo_hash'],
+      piiFields: ['None'],
+      duplicatesEstimate: '1.2%',
+      suggestedDomain: 'Location',
+      confidence: '91.8%',
+      status: 'Discovered'
+    }
+  ];
+  const initialSchemaMappings = [
+    {
+      id: 'map-1',
+      sourceField: 'Id',
+      sourceType: 'string(18)',
+      sourceSample: '0015g00000Uf93rAAB',
+      canonicalField: 'account.identifier',
+      canonicalType: 'string',
+      confidence: 99,
+      triadStatus: 'USER DECISION',
+      decidedBy: 'John (Data Architect)',
+      reasoning: 'Primary key matches canonical record identification standard.'
+    },
+    {
+      id: 'map-2',
+      sourceField: 'Name',
+      sourceType: 'string(255)',
+      sourceSample: 'Apex Global Technologies Ltd',
+      canonicalField: 'organization.name',
+      canonicalType: 'string',
+      confidence: 98,
+      triadStatus: 'USER DECISION',
+      decidedBy: 'John (Data Architect)',
+      reasoning: 'AI matched organization legal name with semantic embedding score 0.984.'
+    },
+    {
+      id: 'map-3',
+      sourceField: 'BillingStreet',
+      sourceType: 'string(255)',
+      sourceSample: '104 Park Street, Suite 400',
+      canonicalField: 'address.line1',
+      canonicalType: 'string',
+      confidence: 96,
+      triadStatus: 'AI RECOMMENDATION',
+      decidedBy: null,
+      reasoning: 'Street level address detected via regex and NER address parsing.'
+    },
+    {
+      id: 'map-4',
+      sourceField: 'BillingCity',
+      sourceType: 'string(40)',
+      sourceSample: 'Kolkata',
+      canonicalField: 'address.city',
+      canonicalType: 'string',
+      confidence: 97,
+      triadStatus: 'AI RECOMMENDATION',
+      decidedBy: null,
+      reasoning: 'ISO-matched city ontology entity.'
+    },
+    {
+      id: 'map-5',
+      sourceField: 'BillingCountry',
+      sourceType: 'string(80)',
+      sourceSample: 'India',
+      canonicalField: 'address.country',
+      canonicalType: 'string',
+      confidence: 99,
+      triadStatus: 'AI RECOMMENDATION',
+      decidedBy: null,
+      reasoning: 'Standard ISO 3166-1 alpha-2 / full country normalization candidate.'
+    },
+    {
+      id: 'map-6',
+      sourceField: 'Phone',
+      sourceType: 'phone',
+      sourceSample: '+91 98765 43210',
+      canonicalField: 'contact.phone',
+      canonicalType: 'phone_e164',
+      confidence: 95,
+      triadStatus: 'AI RECOMMENDATION',
+      decidedBy: null,
+      reasoning: 'E.164 phone standardizer recommended.'
+    },
+    {
+      id: 'map-7',
+      sourceField: 'Website',
+      sourceType: 'url',
+      sourceSample: 'https://apexglobal.io',
+      canonicalField: 'organization.website',
+      canonicalType: 'url',
+      confidence: 93,
+      triadStatus: 'AI RECOMMENDATION',
+      decidedBy: null,
+      reasoning: 'Domain normalization to FQDN host.'
+    }
+  ];
+  const initialProfiles = [
+    { attribute: 'organization.name', completeness: 99.4, uniqueness: 88.2, validity: 98.7, nullRate: '0.6%', samples: ['Apex Global', 'Acme Corp', 'Tata Consultancy'] },
+    { attribute: 'contact.email', completeness: 94.8, uniqueness: 91.5, validity: 96.2, nullRate: '5.2%', samples: ['robert@abc.com', 'contact@apex.io'] },
+    { attribute: 'contact.phone', completeness: 89.1, uniqueness: 86.4, validity: 92.0, nullRate: '10.9%', samples: ['+919876543210', '+14155552671'] },
+    { attribute: 'address.country', completeness: 98.9, uniqueness: 12.1, validity: 99.8, nullRate: '1.1%', samples: ['India', 'United States', 'Germany'] },
+    { attribute: 'account.identifier', completeness: 100.0, uniqueness: 100.0, validity: 100.0, nullRate: '0.0%', samples: ['CUST-00192837', 'CRM-10231'] }
+  ];
+  const initialDQRules = [
+    { id: 'dq-1', name: 'Email Required & Valid Format', entity: 'Customer', attribute: 'contact.email', type: 'Format', severity: 'Error', status: 'Active', failureRate: '3.8%', totalChecked: '4.8M' },
+    { id: 'dq-2', name: 'Valid E.164 Phone Number', entity: 'Customer', attribute: 'contact.phone', type: 'Format', severity: 'Warning', status: 'Active', failureRate: '7.9%', totalChecked: '4.8M' },
+    { id: 'dq-3', name: 'Mandatory Legal Entity Name', entity: 'Customer', attribute: 'organization.name', type: 'Required', severity: 'Error', status: 'Active', failureRate: '0.6%', totalChecked: '4.8M' },
+    { id: 'dq-4', name: 'ISO-3166 Standard Country Code', entity: 'Customer', attribute: 'address.country', type: 'Reference', severity: 'Warning', status: 'Active', failureRate: '1.2%', totalChecked: '4.8M' }
+  ];
+  const initialDQIssues = [
+    {
+      id: 'dqi-101',
+      recordId: 'CRM-102938',
+      entity: 'Customer',
+      attribute: 'contact.email',
+      invalidValue: 'robert.smith@@gmail..com',
+      rule: 'Email Required & Valid Format',
+      severity: 'Error',
+      reason: 'Consecutive special characters violate RFC 5322 syntax.',
+      suggestedCorrection: 'robert.smith@gmail.com',
+      triadStatus: 'AI RECOMMENDATION',
+      status: 'Pending'
+    },
+    {
+      id: 'dqi-102',
+      recordId: 'ERP-88391',
+      entity: 'Customer',
+      attribute: 'address.country',
+      invalidValue: 'Ind.',
+      rule: 'ISO-3166 Standard Country Code',
+      severity: 'Warning',
+      reason: 'Abbreviated country name not in ISO reference table.',
+      suggestedCorrection: 'India (IN)',
+      triadStatus: 'AI RECOMMENDATION',
+      status: 'Pending'
+    }
+  ];
+  const initialMatchStrategies = [
+    {
+      id: 'strat-customer-v4',
+      name: 'Customer Standard',
+      domain: 'Customer',
+      version: 'v4',
+      autoThreshold: 95,
+      reviewThreshold: 85,
       status: 'Active',
-      failureRate: '0.0%',
-      totalChecked: '0',
-      ...rule
-    };
-    this.rules.unshift(newRule);
-    return newRule;
-  }
-
-  async getDQIssues() {
-    return [...this.issues];
-  }
-
-  async resolveDQIssue(issueId, userDecision) {
-    const issue = this.issues.find(i => i.id === issueId);
-    if (issue) {
-      issue.status = userDecision;
-      issue.triadStatus = 'USER DECISION';
+      rulesCount: 5,
+      description: 'High-precision resolution combining exact email/phone with phonetic & Levenshtein organization matching.'
+    },
+    {
+      id: 'strat-account-v2',
+      name: 'Account Corporate',
+      domain: 'Account',
+      version: 'v2',
+      autoThreshold: 92,
+      reviewThreshold: 80,
+      status: 'Draft',
+      rulesCount: 4,
+      description: 'B2B corporate matching incorporating Dun & Bradstreet D-U-N-S hierarchy and domain clustering.'
     }
-    return issue;
-  }
-
-  // Match Strategies
-  async getMatchStrategies() {
-    return [...this.strategies];
-  }
-
-  async getMatchStrategy(id) {
-    return this.strategies.find(s => s.id === id) || null;
-  }
-
-  async saveMatchStrategy(strategy) {
-    const existingIdx = this.strategies.findIndex(s => s.id === strategy.id);
-    if (existingIdx >= 0) {
-      this.strategies[existingIdx] = { ...this.strategies[existingIdx], ...strategy };
-      return this.strategies[existingIdx];
-    } else {
-      const newStrat = {
-        id: `strat-${Date.now()}`,
-        status: 'Draft',
-        version: 'v1',
-        ...strategy
-      };
-      this.strategies.unshift(newStrat);
-      return newStrat;
-    }
-  }
-
-  // Matches & Stewardship Review
-  async getMatches() {
-    return [...this.matches];
-  }
-
-  async getMatch(id) {
-    return this.matches.find(m => m.id === id) || null;
-  }
-
-  async updateMatchDecision(matchId, decision, steward = 'Elena Rostova') {
-    const match = this.matches.find(m => m.id === matchId);
-    if (match) {
-      match.status = decision; // 'Approved', 'Rejected', 'Investigating'
-      match.stewardDecision = {
-        decision,
-        steward,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-    }
-    return match;
-  }
-
-  // Golden Entities
-  async getGoldenEntities() {
-    return [...this.golden];
-  }
-
-  async getGoldenEntity(id) {
-    return this.golden.find(g => g.id === id) || null;
-  }
-
-  // Operations Jobs
-  async getJobs() {
-    return [...this.jobs];
-  }
-
-  async getJob(id) {
-    return this.jobs.find(j => j.id === id) || null;
-  }
-
-  // Admin Telemetry
-  async getAIProviders() {
-    return [...this.aiProviders];
-  }
-
-  async getUsers() {
-    return [...this.users];
-  }
-
-  // Global Search across entities, sources, rules, matches
-  async searchGlobal(query) {
-    if (!query || query.trim() === '') return [];
-    const q = query.toLowerCase().trim();
-    const results = [];
-
-    // Search Golden Entities
-    this.golden.forEach(g => {
-      if (g.name.toLowerCase().includes(q) || g.id.toLowerCase().includes(q)) {
-        results.push({
-          type: 'Golden Entity',
-          title: g.name,
-          subtitle: `ID: ${g.id} • ${g.domain} • ${g.confidence} Confidence`,
-          route: `#/entity-360/${g.id}`,
-          icon: '👑'
-        });
-      }
-    });
-
-    // Search Sources
-    this.sources.forEach(s => {
-      if (s.name.toLowerCase().includes(q) || s.type.toLowerCase().includes(q)) {
-        results.push({
-          type: 'Data Source',
-          title: s.name,
-          subtitle: `${s.type} • ${s.access} • ${s.records} records`,
-          route: `#/data-foundation/sources/${s.id}`,
-          icon: '🔌'
-        });
-      }
-    });
-
-    // Search Matches
-    this.matches.forEach(m => {
-      if (m.sourceA.name.toLowerCase().includes(q) || m.sourceB.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q)) {
-        results.push({
-          type: 'Match Review',
-          title: `${m.sourceA.name} ↔ ${m.sourceB.name}`,
-          subtitle: `Match ID: ${m.id} • Confidence: ${m.confidence}% • ${m.status}`,
-          route: `#/stewardship/reviews/${m.id}`,
-          icon: '⚖️'
-        });
-      }
-    });
-
-    // Search DQ Rules
-    this.rules.forEach(r => {
-      if (r.name.toLowerCase().includes(q) || r.attribute.toLowerCase().includes(q)) {
-        results.push({
-          type: 'DQ Rule',
-          title: r.name,
-          subtitle: `Attribute: ${r.attribute} • Severity: ${r.severity}`,
-          route: `#/data-quality/rules`,
-          icon: '🛡️'
-        });
-      }
-    });
-
-    return results;
-  }
-
-  // AI Copilot simulation with semantic responses and deep links
-  async askAI(question) {
-    const q = question.toLowerCase();
-
-    if (q.includes('merge') || q.includes('why did') || q.includes('account')) {
-      return {
-        answer: `**Entity Merge Analysis (Robert Smith):**\nRecords **CRM-10231** (Salesforce) and **ERP-88391** (SAP ERP) were resolved into Golden Record **CUST-00192837** with **96.7% match confidence** under strategy *Customer Standard v4*.\n\n* **Email Exact Match (+40)**: \`robert@abc.com\`\n* **Phone Exact Match (+25)**: \`+919876543210\`\n* **Name Jaro-Winkler (+19)**: "Robert Smith" vs "Robert J Smith" (97% similarity)\n* **Address Consensus (+13)**: City matched Kolkata (100% agreement)`,
-        links: [
-          { label: 'View Golden Entity 360', route: '#/entity-360/CUST-00192837' },
-          { label: 'Inspect Match Review & Scoring', route: '#/stewardship/reviews/match-101' },
-          { label: 'View Pipeline Lineage', route: '#/governance/lineage' }
-        ],
-        triadStatus: 'SYSTEM FACT'
-      };
-    } else if (q.includes('duplicate') || q.includes('potential')) {
-      return {
-        answer: `Found **14.2% candidate duplicate pairs (~1.43M records)** across joint Salesforce CRM & SAP ERP customer pools. Top cluster includes high-frequency enterprise corporate accounts with minor legal suffixes (e.g. 'LLC' vs 'Technologies Ltd').`,
-        links: [
-          { label: 'Open Stewardship Queue', route: '#/stewardship' },
-          { label: 'View Match Results Table', route: '#/unification/matches' }
-        ],
-        triadStatus: 'AI RECOMMENDATION'
-      };
-    } else if (q.includes('strategy') || q.includes('threshold')) {
-      return {
-        answer: `Active strategy **Customer Standard v4** utilizes a dual-tier decision boundary: **≥95% Auto Match**, **85% - 94.9% Steward Review**, and **<85% No Match**. Simulations show 91.7% auto-resolution with 0.04% false positive rate.`,
-        links: [
-          { label: 'Match Strategy Designer', route: '#/unification/match-strategies/strat-customer-v4' },
-          { label: 'View Simulation Benchmark', route: '#/unification/simulations/sim-latest' }
-        ],
-        triadStatus: 'SYSTEM FACT'
-      };
-    } else if (q.includes('quality') || q.includes('dq') || q.includes('issue')) {
-      return {
-        answer: `Current overall data quality score is **94.2%**. Most critical issue: **3.8% invalid email formats** in CRM ingestion, currently caught and flagged by rule \`Email Required & Valid Format\`.`,
-        links: [
-          { label: 'Open Data Quality Dashboard', route: '#/data-quality' },
-          { label: 'Triage Pending Issues', route: '#/data-quality/issues' }
-        ],
-        triadStatus: 'AI RECOMMENDATION'
-      };
-    }
-
-    return {
-      answer: `I analyzed your enterprise metadata fabric. You have 4 connected sources, 42.8M raw records, and 18.2M Golden Entities in the Customer domain running with 94.2% overall data quality.`,
-      links: [
-        { label: 'Explore Data Foundation', route: '#/data-foundation/sources' },
-        { label: 'View Overview Dashboard', route: '#/' }
-      ],
-      triadStatus: 'AI RECOMMENDATION'
-    };
-  }
-}
-const repository = new DataRepository();
-
-
-// ==================== src/state/store.js ====================
-// Reactive Global State Store & Event Bus for Unify AI Fabric
-const goldenJourneySteps = [
-  { id: 1, title: 'Overview Dashboard', route: '#/', description: 'Platform health & KPI telemetry' },
-  { id: 2, title: 'Enterprise Sources', route: '#/data-foundation/sources', description: 'Zero-copy and materialized connections' },
-  { id: 3, title: 'Connect Salesforce', route: '#/data-foundation/sources/new', description: '7-step zero-copy source wizard' },
-  { id: 4, title: 'Source Details', route: '#/data-foundation/sources/src-salesforce', description: 'Objects, latency, and schema' },
-  { id: 5, title: 'Data Discovery', route: '#/data-foundation/discovery', description: 'Discovered entities & PII detection' },
-  { id: 6, title: 'AI Schema Mapping', route: '#/data-foundation/mappings', description: 'Semantic alignment to canonical model' },
-  { id: 7, title: 'Data Profiles', route: '#/data-foundation/profiles', description: 'Completeness, uniqueness, nulls' },
-  { id: 8, title: 'Data Quality Rules', route: '#/data-quality', description: 'Quality score & rule validation' },
-  { id: 9, title: 'Match Strategies', route: '#/unification/match-strategies', description: 'Multi-attribute scoring weights' },
-  { id: 10, title: 'Strategy Designer', route: '#/unification/match-strategies/new', description: '6-step rule threshold tuning' },
-  { id: 11, title: 'Match Simulation', route: '#/unification/simulations/sim-latest', description: 'Delta benchmark & accuracy test' },
-  { id: 12, title: 'Match Results', route: '#/unification/matches', description: 'Auto-match & review threshold pairs' },
-  { id: 13, title: 'Steward Review', route: '#/stewardship/reviews/match-101', description: 'Side-by-side comparison & decision' },
-  { id: 14, title: 'Golden Records', route: '#/unification/golden-entities', description: 'Mastered customer entities' },
-  { id: 15, title: 'Entity 360', route: '#/entity-360/CUST-00192837', description: 'Winning source survivorship profile' },
-  { id: 16, title: 'Data Lineage', route: '#/governance/lineage', description: 'End-to-end provenance DAG' }
-];
-
-class AppStore {
-  constructor() {
-    this.state = {
-      currentRoute: window.location.hash || '#/',
-      activePersona: 'Data Architect', // Data Architect, Data Steward, Business User, Platform Administrator
-      isAuthenticated: true,
-      currentUser: {
-        name: 'Manjit Singh',
-        email: 'manjit@unify.ai',
-        role: 'Data Architect',
-        tenant: 'Global Enterprise Ltd'
-      },
-      isSearchOpen: false,
-      isAiDrawerOpen: false,
-      aiMessages: [
-        {
-          sender: 'assistant',
-          text: 'Welcome to **Unify AI Copilot**. I can explain entity merge decisions, verify DQ anomalies, or navigate you directly across the unification fabric.',
-          links: [
-            { label: 'Why did Robert Smith merge?', query: 'Why did these accounts merge?' },
-            { label: 'Show duplicate candidates', query: 'Show duplicate accounts' },
-            { label: 'Explain match strategy v4', query: 'Explain match strategy' }
-          ]
-        }
-      ],
-      currentJourneyStep: 1,
-      isJourneyActive: false,
-      notifications: [
-        { id: 'notif-1', title: 'Salesforce CDC Synchronized', time: '2m ago', type: 'info' },
-        { id: 'notif-2', title: '1,284 matches pending review', time: '14m ago', type: 'warning' }
+  ];
+  const initialMatches = [
+    {
+      id: 'match-101',
+      sourceA: { id: 'CRM-10231', source: 'Salesforce CRM', name: 'Robert Smith', email: 'robert@abc.com', phone: '+919876543210', city: 'Kolkata', revenue: '$1,200,000' },
+      sourceB: { id: 'ERP-88391', source: 'SAP ERP', name: 'Robert J Smith', email: 'robert@abc.com', phone: '+919876543210', city: 'Kolkata', revenue: '$1,450,000' },
+      confidence: 96.7,
+      status: 'Auto Match',
+      strategy: 'Customer Standard v4',
+      breakdown: [
+        { attribute: 'Email', method: 'Exact', score: 100, weight: 40, contribution: '+40' },
+        { attribute: 'Phone', method: 'Exact', score: 100, weight: 25, contribution: '+25' },
+        { attribute: 'Name', method: 'Fuzzy (Jaro-Winkler)', score: 97, weight: 20, contribution: '+19' },
+        { attribute: 'Address', method: 'City Match', score: 91, weight: 15, contribution: '+13' }
       ]
-    };
-
-    this.listeners = new Set();
-  }
-
-  login(user) {
-    this.state.isAuthenticated = true;
-    this.state.currentUser = user;
-    this.state.activePersona = user.role || 'Data Architect';
-    this.notify();
-  }
-
-  logout() {
-    this.state.isAuthenticated = false;
-    this.state.currentUser = null;
-    this.notify();
-    window.location.hash = '#/login';
-  }
-
-  getState() {
-    return this.state;
-  }
-
-  subscribe(listener) {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  }
-
-  notify() {
-    this.listeners.forEach(fn => fn(this.state));
-  }
-
-  setRoute(route) {
-    this.state.currentRoute = route;
-    if (window.location.hash !== route) {
-      window.location.hash = route;
+    },
+    {
+      id: 'match-102',
+      sourceA: { id: 'CRM-12221', source: 'Salesforce CRM', name: 'Apex Tech Solutions', email: 'billing@apexsolutions.com', phone: '+14155552671', city: 'San Francisco', revenue: '$4,500,000' },
+      sourceB: { id: 'ERP-71231', source: 'SAP ERP', name: 'Apex Technologies LLC', email: 'accounts@apexsolutions.com', phone: '+14155552671', city: 'San Francisco', revenue: '$4,800,000' },
+      confidence: 89.2,
+      status: 'Requires Review',
+      strategy: 'Customer Standard v4',
+      breakdown: [
+        { attribute: 'Email', method: 'Domain Match', score: 85, weight: 40, contribution: '+34' },
+        { attribute: 'Phone', method: 'Exact', score: 100, weight: 25, contribution: '+25' },
+        { attribute: 'Name', method: 'AI-Assisted Legal Strip', score: 92, weight: 20, contribution: '+18' },
+        { attribute: 'Address', method: 'Exact', score: 100, weight: 15, contribution: '+12' }
+      ]
     }
-    // Update journey step if route matches a journey step
-    const matchedStep = goldenJourneySteps.find(s => s.route === route);
-    if (matchedStep) {
-      this.state.currentJourneyStep = matchedStep.id;
+  ];
+  const initialGoldenEntities = [
+    {
+      id: 'CUST-00192837',
+      name: 'Robert Smith',
+      domain: 'Customer',
+      sourceCount: 2,
+      confidence: '97.4%',
+      status: 'Active',
+      lastUpdated: '12 min ago',
+      attributes: {
+        name: { value: 'Robert J Smith', source: 'SAP ERP', confidence: '99%', updated: '2026-09-23 10:14' },
+        email: { value: 'robert@abc.com', source: 'Salesforce CRM', confidence: '99%', updated: '2026-09-23 10:14' },
+        phone: { value: '+91 98765 43210', source: 'Salesforce CRM', confidence: '98%', updated: '2026-09-23 10:14' },
+        city: { value: 'Kolkata', source: 'Consensus (2/2)', confidence: '100%', updated: '2026-09-23 10:14' },
+        country: { value: 'India', source: 'Consensus (2/2)', confidence: '100%', updated: '2026-09-23 10:14' },
+        revenue: { value: '$1,450,000', source: 'SAP ERP (Materialized Winner)', confidence: '95%', updated: '2026-09-23 10:14' }
+      },
+      sources: [
+        { source: 'Salesforce CRM', id: 'CRM-10231', status: 'Active Contributor', mergedAt: '2026-09-22 14:30' },
+        { source: 'SAP ERP', id: 'ERP-88391', status: 'Active Contributor', mergedAt: '2026-09-22 14:30' }
+      ],
+      history: [
+        { date: 'Today, 10:14 AM', event: 'Survivorship Re-calculation', details: 'Revenue updated from SAP ERP winning rule.', actor: 'System Rule #4' },
+        { date: 'Sep 22, 14:30', event: 'Match Approved & Merged', details: 'CRM-10231 merged with ERP-88391 with 96.7% match confidence.', actor: 'Elena Rostova (Steward)' },
+        { date: 'Sep 20, 09:12', event: 'Golden Entity Created', details: 'Initial record established from Salesforce Account import.', actor: 'Pipeline Job #2049' }
+      ]
+    },
+    {
+      id: 'CUST-00284910',
+      name: 'Apex Global Technologies',
+      domain: 'Customer',
+      sourceCount: 3,
+      confidence: '98.9%',
+      status: 'Active',
+      lastUpdated: '1 hour ago',
+      attributes: {
+        name: { value: 'Apex Global Technologies Ltd', source: 'Salesforce CRM', confidence: '98%', updated: '2026-09-23 09:00' },
+        email: { value: 'contact@apexglobal.io', source: 'PostgreSQL Billing', confidence: '97%', updated: '2026-09-23 09:00' }
+      }
     }
-    this.notify();
-  }
-
-  setPersona(persona) {
-    this.state.activePersona = persona;
-    this.notify();
-  }
-
-  toggleSearch(isOpen) {
-    this.state.isSearchOpen = typeof isOpen === 'boolean' ? isOpen : !this.state.isSearchOpen;
-    this.notify();
-  }
-
-  toggleAiDrawer(isOpen) {
-    this.state.isAiDrawerOpen = typeof isOpen === 'boolean' ? isOpen : !this.state.isAiDrawerOpen;
-    this.notify();
-  }
-
-  addAiMessage(msg) {
-    this.state.aiMessages.push(msg);
-    this.notify();
-  }
-
-  setJourneyStep(stepNum) {
-    if (stepNum >= 1 && stepNum <= goldenJourneySteps.length) {
-      this.state.currentJourneyStep = stepNum;
-      this.state.isJourneyActive = true;
-      const step = goldenJourneySteps[stepNum - 1];
-      this.setRoute(step.route);
-    }
-  }
-
-  nextJourneyStep() {
-    if (this.state.currentJourneyStep < goldenJourneySteps.length) {
-      this.setJourneyStep(this.state.currentJourneyStep + 1);
-    }
-  }
-
-  prevJourneyStep() {
-    if (this.state.currentJourneyStep > 1) {
-      this.setJourneyStep(this.state.currentJourneyStep - 1);
-    }
-  }
-
-  toggleJourney(active) {
-    this.state.isJourneyActive = typeof active === 'boolean' ? active : !this.state.isJourneyActive;
-    this.notify();
-  }
-}
-const store = new AppStore();
+  ];
+  const initialJobs = [
+    { id: 'job-9821', name: 'Continuous CDC Ingestion - Salesforce', type: 'Zero-Copy Sync', source: 'Salesforce CRM', entity: 'Account', status: 'Running', records: '14,209', duration: 'Ongoing', started: '10 min ago' },
+    { id: 'job-9820', name: 'Customer Reconciliation & Matching', type: 'Unification Funnel', source: 'Multi-Source', entity: 'Customer', status: 'Completed', records: '2,481,200', duration: '4m 12s', started: '1 hour ago' },
+    { id: 'job-9819', name: 'SAP S/4HANA Materialization Delta', type: 'Batch Extract', source: 'SAP ERP', entity: 'Customer', status: 'Completed', records: '128,400', duration: '1m 45s', started: '2 hours ago' },
+    { id: 'job-9818', name: 'DQ Profiling & Anomaly Scan', type: 'Data Quality', source: 'Databricks', entity: 'All Entities', status: 'Completed', records: '18.2M', duration: '12m 30s', started: '5 hours ago' }
+  ];
+  const initialAIProviders = [
+    { id: 'ai-google', provider: 'Google Cloud Vertex AI', model: 'Gemini 1.5 Pro', status: 'Active', latency: '240ms', purpose: 'Semantic Schema Mapping, LLM Entity Resolution, Match Explanation' },
+    { id: 'ai-openrouter', provider: 'OpenRouter Enterprise', model: 'Meta Llama 3.1 70B', status: 'Active', latency: '310ms', purpose: 'DQ Rule Generation, Natural Language Copilot' },
+    { id: 'ai-anthropic', provider: 'Anthropic Bedrock', model: 'Claude 3.5 Sonnet', status: 'Available', latency: '290ms', purpose: 'Complex Multi-Table Survivorship Reasoning' }
+  ];
+  const initialUsers = [
+    { id: 'usr-1', name: 'John Smith', email: 'John@unify.ai', role: 'Data Architect', department: 'Enterprise Data Office', status: 'Active' },
+    { id: 'usr-2', name: 'Elena Rostova', email: 'elena@unify.ai', role: 'Data Steward', department: 'MDM Governance Group', status: 'Active' },
+    { id: 'usr-3', name: 'Marcus Vance', email: 'marcus@unify.ai', role: 'Analyst', department: 'Commercial Operations', status: 'Active' },
+    { id: 'usr-4', name: 'Sarah Chen', email: 'sarah@unify.ai', role: 'Administrator', department: 'Cloud Infrastructure', status: 'Active' }
+  ];
 
 
-// ==================== src/router.js ====================
-// Client-side Router for Unify AI Fabric SPA
-class Router {
-  constructor() {
-    this.routes = [];
-    this.currentHandler = null;
-    this.container = null;
+  // ==================== src/services/repository.js ====================
+  // Service & Repository Layer — Abstraction over Enterprise Unify AI APIs
 
-    window.addEventListener('hashchange', () => this.handleRouting());
-  }
 
-  setContainer(element) {
-    this.container = element;
-  }
-
-  addRoute(pattern, handler) {
-    // Convert express-style route pattern (e.g., /entity-360/:entityId) to regex
-    const paramNames = [];
-    const regexPattern = pattern.replace(/:([a-zA-Z0-9_]+)/g, (_, name) => {
-      paramNames.push(name);
-      return '([^\\/]+)';
-    });
-
-    const regex = new RegExp(`^#?${regexPattern}$`);
-    this.routes.push({ pattern, regex, paramNames, handler });
-    return this;
-  }
-
-  async handleRouting() {
-    let hash = window.location.hash || '#/';
-    if (!hash.startsWith('#/')) {
-      hash = '#/';
-      window.location.hash = hash;
+  class DataRepository {
+    constructor() {
+      this.sources = [...initialSources];
+      this.discovered = [...initialDiscoveredDatasets];
+      this.mappings = [...initialSchemaMappings];
+      this.profiles = [...initialProfiles];
+      this.rules = [...initialDQRules];
+      this.issues = [...initialDQIssues];
+      this.strategies = [...initialMatchStrategies];
+      this.matches = [...initialMatches];
+      this.golden = [...initialGoldenEntities];
+      this.jobs = [...initialJobs];
+      this.aiProviders = [...initialAIProviders];
+      this.users = [...initialUsers];
     }
 
-    store.setRoute(hash);
+    // Sources
+    async getSources() {
+      return [...this.sources];
+    }
 
-    let matchResult = null;
-    let matchedRoute = null;
+    async getSource(id) {
+      return this.sources.find(s => s.id === id) || null;
+    }
 
-    for (const r of this.routes) {
-      const match = hash.match(r.regex);
-      if (match) {
-        matchedRoute = r;
-        const params = {};
-        r.paramNames.forEach((name, index) => {
-          params[name] = match[index + 1];
-        });
-        matchResult = params;
-        break;
+    async addSource(sourceData) {
+      const newSource = {
+        id: `src-${Date.now()}`,
+        status: 'Connected',
+        records: '0',
+        recordsRaw: 0,
+        lastSync: 'Just now',
+        health: '100%',
+        objectsCount: (sourceData.selectedObjects || []).length,
+        ...sourceData
+      };
+      this.sources.unshift(newSource);
+      return newSource;
+    }
+
+    // Discovery
+    async getDiscoveredDatasets() {
+      return [...this.discovered];
+    }
+
+    // Schema Mappings
+    async getSchemaMappings() {
+      return [...this.mappings];
+    }
+
+    async updateMappingDecision(mappingId, status, user = 'Current User') {
+      const map = this.mappings.find(m => m.id === mappingId);
+      if (map) {
+        map.triadStatus = status; // 'USER DECISION' or 'AI RECOMMENDATION'
+        map.decidedBy = status === 'USER DECISION' ? `${user} (Approved)` : null;
+      }
+      return map;
+    }
+
+    async acceptAllHighConfidence(user = 'John (Data Architect)') {
+      this.mappings.forEach(m => {
+        if (m.confidence >= 95) {
+          m.triadStatus = 'USER DECISION';
+          m.decidedBy = user;
+        }
+      });
+      return [...this.mappings];
+    }
+
+    // Data Profiles
+    async getDataProfiles() {
+      return [...this.profiles];
+    }
+
+    // DQ Rules & Issues
+    async getDQRules() {
+      return [...this.rules];
+    }
+
+    async addDQRule(rule) {
+      const newRule = {
+        id: `dq-${Date.now()}`,
+        status: 'Active',
+        failureRate: '0.0%',
+        totalChecked: '0',
+        ...rule
+      };
+      this.rules.unshift(newRule);
+      return newRule;
+    }
+
+    async getDQIssues() {
+      return [...this.issues];
+    }
+
+    async resolveDQIssue(issueId, userDecision) {
+      const issue = this.issues.find(i => i.id === issueId);
+      if (issue) {
+        issue.status = userDecision;
+        issue.triadStatus = 'USER DECISION';
+      }
+      return issue;
+    }
+
+    // Match Strategies
+    async getMatchStrategies() {
+      return [...this.strategies];
+    }
+
+    async getMatchStrategy(id) {
+      return this.strategies.find(s => s.id === id) || null;
+    }
+
+    async saveMatchStrategy(strategy) {
+      const existingIdx = this.strategies.findIndex(s => s.id === strategy.id);
+      if (existingIdx >= 0) {
+        this.strategies[existingIdx] = { ...this.strategies[existingIdx], ...strategy };
+        return this.strategies[existingIdx];
+      } else {
+        const newStrat = {
+          id: `strat-${Date.now()}`,
+          status: 'Draft',
+          version: 'v1',
+          ...strategy
+        };
+        this.strategies.unshift(newStrat);
+        return newStrat;
       }
     }
 
-    const isAuthRoute = hash === '#/login' || hash === '#/register' || hash === '#/forgot-password';
-    const appRoot = document.getElementById('app-root');
+    // Matches & Stewardship Review
+    async getMatches() {
+      return [...this.matches];
+    }
 
-    if (isAuthRoute) {
-      if (matchedRoute && appRoot) {
+    async getMatch(id) {
+      return this.matches.find(m => m.id === id) || null;
+    }
+
+    async updateMatchDecision(matchId, decision, steward = 'Elena Rostova') {
+      const match = this.matches.find(m => m.id === matchId);
+      if (match) {
+        match.status = decision; // 'Approved', 'Rejected', 'Investigating'
+        match.stewardDecision = {
+          decision,
+          steward,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+      }
+      return match;
+    }
+
+    // Golden Entities
+    async getGoldenEntities() {
+      return [...this.golden];
+    }
+
+    async getGoldenEntity(id) {
+      return this.golden.find(g => g.id === id) || null;
+    }
+
+    // Operations Jobs
+    async getJobs() {
+      return [...this.jobs];
+    }
+
+    async getJob(id) {
+      return this.jobs.find(j => j.id === id) || null;
+    }
+
+    // Admin Telemetry
+    async getAIProviders() {
+      return [...this.aiProviders];
+    }
+
+    async getUsers() {
+      return [...this.users];
+    }
+
+    // Global Search across entities, sources, rules, matches
+    async searchGlobal(query) {
+      if (!query || query.trim() === '') return [];
+      const q = query.toLowerCase().trim();
+      const results = [];
+
+      // Search Golden Entities
+      this.golden.forEach(g => {
+        if (g.name.toLowerCase().includes(q) || g.id.toLowerCase().includes(q)) {
+          results.push({
+            type: 'Golden Entity',
+            title: g.name,
+            subtitle: `ID: ${g.id} • ${g.domain} • ${g.confidence} Confidence`,
+            route: `#/entity-360/${g.id}`,
+            icon: '👑'
+          });
+        }
+      });
+
+      // Search Sources
+      this.sources.forEach(s => {
+        if (s.name.toLowerCase().includes(q) || s.type.toLowerCase().includes(q)) {
+          results.push({
+            type: 'Data Source',
+            title: s.name,
+            subtitle: `${s.type} • ${s.access} • ${s.records} records`,
+            route: `#/data-foundation/sources/${s.id}`,
+            icon: '🔌'
+          });
+        }
+      });
+
+      // Search Matches
+      this.matches.forEach(m => {
+        if (m.sourceA.name.toLowerCase().includes(q) || m.sourceB.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q)) {
+          results.push({
+            type: 'Match Review',
+            title: `${m.sourceA.name} ↔ ${m.sourceB.name}`,
+            subtitle: `Match ID: ${m.id} • Confidence: ${m.confidence}% • ${m.status}`,
+            route: `#/stewardship/reviews/${m.id}`,
+            icon: '⚖️'
+          });
+        }
+      });
+
+      // Search DQ Rules
+      this.rules.forEach(r => {
+        if (r.name.toLowerCase().includes(q) || r.attribute.toLowerCase().includes(q)) {
+          results.push({
+            type: 'DQ Rule',
+            title: r.name,
+            subtitle: `Attribute: ${r.attribute} • Severity: ${r.severity}`,
+            route: `#/data-quality/rules`,
+            icon: '🛡️'
+          });
+        }
+      });
+
+      return results;
+    }
+
+    // AI Copilot simulation with semantic responses and deep links
+    async askAI(question) {
+      const q = question.toLowerCase();
+
+      if (q.includes('merge') || q.includes('why did') || q.includes('account')) {
+        return {
+          answer: `**Entity Merge Analysis (Robert Smith):**\nRecords **CRM-10231** (Salesforce) and **ERP-88391** (SAP ERP) were resolved into Golden Record **CUST-00192837** with **96.7% match confidence** under strategy *Customer Standard v4*.\n\n* **Email Exact Match (+40)**: \`robert@abc.com\`\n* **Phone Exact Match (+25)**: \`+919876543210\`\n* **Name Jaro-Winkler (+19)**: "Robert Smith" vs "Robert J Smith" (97% similarity)\n* **Address Consensus (+13)**: City matched Kolkata (100% agreement)`,
+          links: [
+            { label: 'View Golden Entity 360', route: '#/entity-360/CUST-00192837' },
+            { label: 'Inspect Match Review & Scoring', route: '#/stewardship/reviews/match-101' },
+            { label: 'View Pipeline Lineage', route: '#/governance/lineage' }
+          ],
+          triadStatus: 'SYSTEM FACT'
+        };
+      } else if (q.includes('duplicate') || q.includes('potential')) {
+        return {
+          answer: `Found **14.2% candidate duplicate pairs (~1.43M records)** across joint Salesforce CRM & SAP ERP customer pools. Top cluster includes high-frequency enterprise corporate accounts with minor legal suffixes (e.g. 'LLC' vs 'Technologies Ltd').`,
+          links: [
+            { label: 'Open Stewardship Queue', route: '#/stewardship' },
+            { label: 'View Match Results Table', route: '#/unification/matches' }
+          ],
+          triadStatus: 'AI RECOMMENDATION'
+        };
+      } else if (q.includes('strategy') || q.includes('threshold')) {
+        return {
+          answer: `Active strategy **Customer Standard v4** utilizes a dual-tier decision boundary: **≥95% Auto Match**, **85% - 94.9% Steward Review**, and **<85% No Match**. Simulations show 91.7% auto-resolution with 0.04% false positive rate.`,
+          links: [
+            { label: 'Match Strategy Designer', route: '#/unification/match-strategies/strat-customer-v4' },
+            { label: 'View Simulation Benchmark', route: '#/unification/simulations/sim-latest' }
+          ],
+          triadStatus: 'SYSTEM FACT'
+        };
+      } else if (q.includes('quality') || q.includes('dq') || q.includes('issue')) {
+        return {
+          answer: `Current overall data quality score is **94.2%**. Most critical issue: **3.8% invalid email formats** in CRM ingestion, currently caught and flagged by rule \`Email Required & Valid Format\`.`,
+          links: [
+            { label: 'Open Data Quality Dashboard', route: '#/data-quality' },
+            { label: 'Triage Pending Issues', route: '#/data-quality/issues' }
+          ],
+          triadStatus: 'AI RECOMMENDATION'
+        };
+      }
+
+      return {
+        answer: `I analyzed your enterprise metadata fabric. You have 4 connected sources, 42.8M raw records, and 18.2M Golden Entities in the Customer domain running with 94.2% overall data quality.`,
+        links: [
+          { label: 'Explore Data Foundation', route: '#/data-foundation/sources' },
+          { label: 'View Overview Dashboard', route: '#/' }
+        ],
+        triadStatus: 'AI RECOMMENDATION'
+      };
+    }
+  }
+  const repository = new DataRepository();
+
+
+  // ==================== src/state/store.js ====================
+  // Reactive Global State Store & Event Bus for Unify AI Fabric
+  const goldenJourneySteps = [
+    { id: 1, title: 'Overview Dashboard', route: '#/', description: 'Platform health & KPI telemetry' },
+    { id: 2, title: 'Enterprise Sources', route: '#/data-foundation/sources', description: 'Zero-copy and materialized connections' },
+    { id: 3, title: 'Connect Salesforce', route: '#/data-foundation/sources/new', description: '7-step zero-copy source wizard' },
+    { id: 4, title: 'Source Details', route: '#/data-foundation/sources/src-salesforce', description: 'Objects, latency, and schema' },
+    { id: 5, title: 'Data Discovery', route: '#/data-foundation/discovery', description: 'Discovered entities & PII detection' },
+    { id: 6, title: 'AI Schema Mapping', route: '#/data-foundation/mappings', description: 'Semantic alignment to canonical model' },
+    { id: 7, title: 'Data Profiles', route: '#/data-foundation/profiles', description: 'Completeness, uniqueness, nulls' },
+    { id: 8, title: 'Data Quality Rules', route: '#/data-quality', description: 'Quality score & rule validation' },
+    { id: 9, title: 'Match Strategies', route: '#/unification/match-strategies', description: 'Multi-attribute scoring weights' },
+    { id: 10, title: 'Strategy Designer', route: '#/unification/match-strategies/new', description: '6-step rule threshold tuning' },
+    { id: 11, title: 'Match Simulation', route: '#/unification/simulations/sim-latest', description: 'Delta benchmark & accuracy test' },
+    { id: 12, title: 'Match Results', route: '#/unification/matches', description: 'Auto-match & review threshold pairs' },
+    { id: 13, title: 'Steward Review', route: '#/stewardship/reviews/match-101', description: 'Side-by-side comparison & decision' },
+    { id: 14, title: 'Golden Records', route: '#/unification/golden-entities', description: 'Mastered customer entities' },
+    { id: 15, title: 'Entity 360', route: '#/entity-360/CUST-00192837', description: 'Winning source survivorship profile' },
+    { id: 16, title: 'Data Lineage', route: '#/governance/lineage', description: 'End-to-end provenance DAG' }
+  ];
+
+  class AppStore {
+    constructor() {
+      this.state = {
+        currentRoute: window.location.hash || '#/',
+        activePersona: 'Data Architect', // Data Architect, Data Steward, Business User, Platform Administrator
+        isAuthenticated: true,
+        currentUser: {
+          name: 'John Smith',
+          email: 'John@unify.ai',
+          role: 'Data Architect',
+          tenant: 'Global Enterprise Ltd'
+        },
+        isSearchOpen: false,
+        isAiDrawerOpen: false,
+        aiMessages: [
+          {
+            sender: 'assistant',
+            text: 'Welcome to **Unify AI Copilot**. I can explain entity merge decisions, verify DQ anomalies, or navigate you directly across the unification fabric.',
+            links: [
+              { label: 'Why did Robert Smith merge?', query: 'Why did these accounts merge?' },
+              { label: 'Show duplicate candidates', query: 'Show duplicate accounts' },
+              { label: 'Explain match strategy v4', query: 'Explain match strategy' }
+            ]
+          }
+        ],
+        currentJourneyStep: 1,
+        isJourneyActive: false,
+        notifications: [
+          { id: 'notif-1', title: 'Salesforce CDC Synchronized', time: '2m ago', type: 'info' },
+          { id: 'notif-2', title: '1,284 matches pending review', time: '14m ago', type: 'warning' }
+        ]
+      };
+
+      this.listeners = new Set();
+    }
+
+    login(user) {
+      this.state.isAuthenticated = true;
+      this.state.currentUser = user;
+      this.state.activePersona = user.role || 'Data Architect';
+      this.notify();
+    }
+
+    logout() {
+      this.state.isAuthenticated = false;
+      this.state.currentUser = null;
+      this.notify();
+      window.location.hash = '#/login';
+    }
+
+    getState() {
+      return this.state;
+    }
+
+    subscribe(listener) {
+      this.listeners.add(listener);
+      return () => this.listeners.delete(listener);
+    }
+
+    notify() {
+      this.listeners.forEach(fn => fn(this.state));
+    }
+
+    setRoute(route) {
+      this.state.currentRoute = route;
+      if (window.location.hash !== route) {
+        window.location.hash = route;
+      }
+      // Update journey step if route matches a journey step
+      const matchedStep = goldenJourneySteps.find(s => s.route === route);
+      if (matchedStep) {
+        this.state.currentJourneyStep = matchedStep.id;
+      }
+      this.notify();
+    }
+
+    setPersona(persona) {
+      this.state.activePersona = persona;
+      this.notify();
+    }
+
+    toggleSearch(isOpen) {
+      this.state.isSearchOpen = typeof isOpen === 'boolean' ? isOpen : !this.state.isSearchOpen;
+      this.notify();
+    }
+
+    toggleAiDrawer(isOpen) {
+      this.state.isAiDrawerOpen = typeof isOpen === 'boolean' ? isOpen : !this.state.isAiDrawerOpen;
+      this.notify();
+    }
+
+    addAiMessage(msg) {
+      this.state.aiMessages.push(msg);
+      this.notify();
+    }
+
+    setJourneyStep(stepNum) {
+      if (stepNum >= 1 && stepNum <= goldenJourneySteps.length) {
+        this.state.currentJourneyStep = stepNum;
+        this.state.isJourneyActive = true;
+        const step = goldenJourneySteps[stepNum - 1];
+        this.setRoute(step.route);
+      }
+    }
+
+    nextJourneyStep() {
+      if (this.state.currentJourneyStep < goldenJourneySteps.length) {
+        this.setJourneyStep(this.state.currentJourneyStep + 1);
+      }
+    }
+
+    prevJourneyStep() {
+      if (this.state.currentJourneyStep > 1) {
+        this.setJourneyStep(this.state.currentJourneyStep - 1);
+      }
+    }
+
+    toggleJourney(active) {
+      this.state.isJourneyActive = typeof active === 'boolean' ? active : !this.state.isJourneyActive;
+      this.notify();
+    }
+  }
+  const store = new AppStore();
+
+
+  // ==================== src/router.js ====================
+  // Client-side Router for Unify AI Fabric SPA
+  class Router {
+    constructor() {
+      this.routes = [];
+      this.currentHandler = null;
+      this.container = null;
+
+      window.addEventListener('hashchange', () => this.handleRouting());
+    }
+
+    setContainer(element) {
+      this.container = element;
+    }
+
+    addRoute(pattern, handler) {
+      // Convert express-style route pattern (e.g., /entity-360/:entityId) to regex
+      const paramNames = [];
+      const regexPattern = pattern.replace(/:([a-zA-Z0-9_]+)/g, (_, name) => {
+        paramNames.push(name);
+        return '([^\\/]+)';
+      });
+
+      const regex = new RegExp(`^#?${regexPattern}$`);
+      this.routes.push({ pattern, regex, paramNames, handler });
+      return this;
+    }
+
+    async handleRouting() {
+      let hash = window.location.hash || '#/';
+      if (!hash.startsWith('#/')) {
+        hash = '#/';
+        window.location.hash = hash;
+      }
+
+      store.setRoute(hash);
+
+      let matchResult = null;
+      let matchedRoute = null;
+
+      for (const r of this.routes) {
+        const match = hash.match(r.regex);
+        if (match) {
+          matchedRoute = r;
+          const params = {};
+          r.paramNames.forEach((name, index) => {
+            params[name] = match[index + 1];
+          });
+          matchResult = params;
+          break;
+        }
+      }
+
+      const isAuthRoute = hash === '#/login' || hash === '#/register' || hash === '#/forgot-password';
+      const appRoot = document.getElementById('app-root');
+
+      if (isAuthRoute) {
+        if (matchedRoute && appRoot) {
+          try {
+            const pageHtml = await matchedRoute.handler(matchResult || {});
+            if (typeof pageHtml === 'string') {
+              appRoot.innerHTML = pageHtml;
+            } else if (pageHtml instanceof HTMLElement) {
+              appRoot.innerHTML = '';
+              appRoot.appendChild(pageHtml);
+            }
+            window.dispatchEvent(new CustomEvent('unify:page-mounted', { detail: { hash, params: matchResult } }));
+          } catch (err) {
+            console.error('Error rendering auth route:', hash, err);
+          }
+        }
+        return;
+      }
+
+      // Authenticated / App Route: Ensure shell is mounted
+      let viewport = document.getElementById('main-content-viewport');
+      if (!viewport && window.unifyMountShell) {
+        window.unifyMountShell();
+        viewport = document.getElementById('main-content-viewport');
+        this.container = viewport;
+      }
+
+      if (matchedRoute && this.container) {
         try {
+          this.container.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);"><span style="display:inline-block; animation: spin 1s linear infinite;">⏳</span> Loading fabric telemetry...</div>';
           const pageHtml = await matchedRoute.handler(matchResult || {});
           if (typeof pageHtml === 'string') {
-            appRoot.innerHTML = pageHtml;
+            this.container.innerHTML = pageHtml;
           } else if (pageHtml instanceof HTMLElement) {
-            appRoot.innerHTML = '';
-            appRoot.appendChild(pageHtml);
+            this.container.innerHTML = '';
+            this.container.appendChild(pageHtml);
           }
+          // Dispatch page mounted event
           window.dispatchEvent(new CustomEvent('unify:page-mounted', { detail: { hash, params: matchResult } }));
         } catch (err) {
-          console.error('Error rendering auth route:', hash, err);
-        }
-      }
-      return;
-    }
-
-    // Authenticated / App Route: Ensure shell is mounted
-    let viewport = document.getElementById('main-content-viewport');
-    if (!viewport && window.unifyMountShell) {
-      window.unifyMountShell();
-      viewport = document.getElementById('main-content-viewport');
-      this.container = viewport;
-    }
-
-    if (matchedRoute && this.container) {
-      try {
-        this.container.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);"><span style="display:inline-block; animation: spin 1s linear infinite;">⏳</span> Loading fabric telemetry...</div>';
-        const pageHtml = await matchedRoute.handler(matchResult || {});
-        if (typeof pageHtml === 'string') {
-          this.container.innerHTML = pageHtml;
-        } else if (pageHtml instanceof HTMLElement) {
-          this.container.innerHTML = '';
-          this.container.appendChild(pageHtml);
-        }
-        // Dispatch page mounted event
-        window.dispatchEvent(new CustomEvent('unify:page-mounted', { detail: { hash, params: matchResult } }));
-      } catch (err) {
-        console.error('Error rendering route:', hash, err);
-        this.container.innerHTML = `
+          console.error('Error rendering route:', hash, err);
+          this.container.innerHTML = `
           <div style="padding: 32px; background: var(--danger-bg); border: 1px solid var(--danger); border-radius: 8px; margin: 20px;">
             <h3 style="color: #fca5a5; margin-bottom: 8px;">Error Loading Route</h3>
             <p style="color: var(--text-secondary);">${err.message}</p>
             <button class="btn btn-secondary" onclick="window.location.hash='#/'" style="margin-top: 14px;">Return to Overview</button>
           </div>
         `;
-      }
-    } else if (this.container) {
-      // 404 Route Fallback
-      this.container.innerHTML = `
+        }
+      } else if (this.container) {
+        // 404 Route Fallback
+        this.container.innerHTML = `
         <div style="padding: 48px; text-align: center;">
           <h2 style="font-family: var(--font-display); font-size: 24px; margin-bottom: 8px; color: #fff;">Route Not Found</h2>
           <p style="color: var(--text-muted); margin-bottom: 20px;">The requested path <code>${hash}</code> does not exist in the fabric navigation registry.</p>
           <a href="#/" class="btn btn-primary">Return to Overview</a>
         </div>
       `;
+      }
+    }
+
+    navigate(hash) {
+      window.location.hash = hash;
     }
   }
-
-  navigate(hash) {
-    window.location.hash = hash;
-  }
-}
-const router = new Router();
+  const router = new Router();
 
 
-// ==================== src/components/breadcrumbs.js ====================
-// Breadcrumb Component (Section 47)
-function renderBreadcrumbs(crumbs = []) {
-  if (!crumbs || crumbs.length === 0) {
-    crumbs = [{ label: 'Overview', route: '#/' }];
-  }
-
-  const crumbsHtml = crumbs.map((c, idx) => {
-    const isLast = idx === crumbs.length - 1;
-    if (isLast) {
-      return `<span class="breadcrumb-item current">${c.label}</span>`;
+  // ==================== src/components/breadcrumbs.js ====================
+  // Breadcrumb Component (Section 47)
+  function renderBreadcrumbs(crumbs = []) {
+    if (!crumbs || crumbs.length === 0) {
+      crumbs = [{ label: 'Overview', route: '#/' }];
     }
-    return `
+
+    const crumbsHtml = crumbs.map((c, idx) => {
+      const isLast = idx === crumbs.length - 1;
+      if (isLast) {
+        return `<span class="breadcrumb-item current">${c.label}</span>`;
+      }
+      return `
       <a href="${c.route}" class="breadcrumb-item">${c.label}</a>
       <span class="breadcrumb-separator">/</span>
     `;
-  }).join('');
+    }).join('');
 
-  return `<nav class="breadcrumbs-bar" aria-label="Breadcrumb">${crumbsHtml}</nav>`;
-}
+    return `<nav class="breadcrumbs-bar" aria-label="Breadcrumb">${crumbsHtml}</nav>`;
+  }
 
 
-// ==================== src/components/sidebar.js ====================
-// Sidebar Component implementing Section 2 Navigation Model
-function renderSidebar() {
-  const currentRoute = window.location.hash || '#/';
-  const state = store.getState();
-  const currentStep = goldenJourneySteps.find(s => s.id === state.currentJourneyStep) || goldenJourneySteps[0];
-  const progressPercent = Math.round((state.currentJourneyStep / goldenJourneySteps.length) * 100);
+  // ==================== src/components/sidebar.js ====================
+  // Sidebar Component implementing Section 2 Navigation Model
+  function renderSidebar() {
+    const currentRoute = window.location.hash || '#/';
+    const state = store.getState();
+    const currentStep = goldenJourneySteps.find(s => s.id === state.currentJourneyStep) || goldenJourneySteps[0];
+    const progressPercent = Math.round((state.currentJourneyStep / goldenJourneySteps.length) * 100);
 
-  const navSections = [
-    {
-      group: 'Overview',
-      icon: '📊',
-      items: [
-        { label: 'Platform Overview', route: '#/' }
-      ]
-    },
-    {
-      group: 'Data Foundation',
-      icon: '🏛️',
-      items: [
-        { label: 'Sources', route: '#/data-foundation/sources', badge: '4' },
-        { label: 'Add Source', route: '#/data-foundation/sources/new' },
-        { label: 'Source Details', route: '#/data-foundation/sources/src-salesforce' },
-        { label: 'Data Discovery', route: '#/data-foundation/discovery', badge: '3' },
-        { label: 'Schema Mapping', route: '#/data-foundation/mappings' },
-        { label: 'Data Profiles', route: '#/data-foundation/profiles' }
-      ]
-    },
-    {
-      group: 'Data Quality',
-      icon: '🛡️',
-      items: [
-        { label: 'DQ Overview', route: '#/data-quality' },
-        { label: 'Rules', route: '#/data-quality/rules', badge: '4' },
-        { label: 'Rule Designer', route: '#/data-quality/rules/new' },
-        { label: 'DQ Issues', route: '#/data-quality/issues', badge: '2', badgeClass: 'badge-danger' }
-      ]
-    },
-    {
-      group: 'Unification',
-      icon: '⚡',
-      items: [
-        { label: 'Unification Overview', route: '#/unification' },
-        { label: 'Match Strategies', route: '#/unification/match-strategies', badge: '2' },
-        { label: 'Strategy Designer', route: '#/unification/match-strategies/new' },
-        { label: 'Simulations', route: '#/unification/simulations/sim-latest' },
-        { label: 'Match Results', route: '#/unification/matches', badge: '96.7%' },
-        { label: 'Golden Entities', route: '#/unification/golden-entities', badge: '18.2M' }
-      ]
-    },
-    {
-      group: 'Stewardship',
-      icon: '⚖️',
-      items: [
-        { label: 'Review Queue', route: '#/stewardship', badge: '1,284', badgeClass: 'badge-warning' },
-        { label: 'Match Review', route: '#/stewardship/reviews/match-101' },
-        { label: 'Decisions Log', route: '#/stewardship/decisions' }
-      ]
-    },
-    {
-      group: 'Entity 360',
-      icon: '👤',
-      items: [
-        { label: 'Entity Search', route: '#/entity-360/search' },
-        { label: 'Entity Profile', route: '#/entity-360/CUST-00192837' },
-        { label: 'Identity Graph', route: '#/entity-360/CUST-00192837/graph' },
-        { label: 'Entity History', route: '#/entity-360/CUST-00192837/history' }
-      ]
-    },
-    {
-      group: 'Governance',
-      icon: '📜',
-      items: [
-        { label: 'Data Lineage', route: '#/governance/lineage' },
-        { label: 'Audit Trail', route: '#/governance/audit' },
-        { label: 'Reference Data', route: '#/governance/reference-data' },
-        { label: 'Policies', route: '#/governance/policies' }
-      ]
-    },
-    {
-      group: 'Activation',
-      icon: '🚀',
-      items: [
-        { label: 'Activation Overview', route: '#/activation' },
-        { label: 'APIs', route: '#/activation/apis', badge: '4' },
-        { label: 'Event Streams', route: '#/activation/events', badge: 'CDC' },
-        { label: 'Data Products', route: '#/activation/data-products', badge: 'Certified' },
-        { label: 'Destinations', route: '#/activation/destinations' }
-      ]
-    },
-    {
-      group: 'Operations',
-      icon: '⚙️',
-      items: [
-        { label: 'Jobs', route: '#/operations/jobs', badge: '1 Running', badgeClass: 'badge-info' },
-        { label: 'Job Details', route: '#/operations/jobs/job-9820' },
-        { label: 'System Health', route: '#/operations/health', badge: 'Healthy' }
-      ]
-    },
-    {
-      group: 'Administration',
-      icon: '🔧',
-      items: [
-        { label: 'Domains', route: '#/admin/domains' },
-        { label: 'Entity Models', route: '#/admin/entity-models' },
-        { label: 'Users & Roles', route: '#/admin/users' },
-        { label: 'AI Providers', route: '#/admin/ai-providers', badge: 'Gemini' },
-        { label: 'Settings', route: '#/admin/settings' }
-      ]
-    }
-  ];
+    const navSections = [
+      {
+        group: 'Overview',
+        icon: '📊',
+        items: [
+          { label: 'Platform Overview', route: '#/' }
+        ]
+      },
+      {
+        group: 'Data Foundation',
+        icon: '🏛️',
+        items: [
+          { label: 'Sources', route: '#/data-foundation/sources', badge: '4' },
+          { label: 'Add Source', route: '#/data-foundation/sources/new' },
+          { label: 'Source Details', route: '#/data-foundation/sources/src-salesforce' },
+          { label: 'Data Discovery', route: '#/data-foundation/discovery', badge: '3' },
+          { label: 'Schema Mapping', route: '#/data-foundation/mappings' },
+          { label: 'Data Profiles', route: '#/data-foundation/profiles' }
+        ]
+      },
+      {
+        group: 'Data Quality',
+        icon: '🛡️',
+        items: [
+          { label: 'DQ Overview', route: '#/data-quality' },
+          { label: 'Rules', route: '#/data-quality/rules', badge: '4' },
+          { label: 'Rule Designer', route: '#/data-quality/rules/new' },
+          { label: 'DQ Issues', route: '#/data-quality/issues', badge: '2', badgeClass: 'badge-danger' }
+        ]
+      },
+      {
+        group: 'Unification',
+        icon: '⚡',
+        items: [
+          { label: 'Unification Overview', route: '#/unification' },
+          { label: 'Match Strategies', route: '#/unification/match-strategies', badge: '2' },
+          { label: 'Strategy Designer', route: '#/unification/match-strategies/new' },
+          { label: 'Simulations', route: '#/unification/simulations/sim-latest' },
+          { label: 'Match Results', route: '#/unification/matches', badge: '96.7%' },
+          { label: 'Golden Entities', route: '#/unification/golden-entities', badge: '18.2M' }
+        ]
+      },
+      {
+        group: 'Stewardship',
+        icon: '⚖️',
+        items: [
+          { label: 'Review Queue', route: '#/stewardship', badge: '1,284', badgeClass: 'badge-warning' },
+          { label: 'Match Review', route: '#/stewardship/reviews/match-101' },
+          { label: 'Decisions Log', route: '#/stewardship/decisions' }
+        ]
+      },
+      {
+        group: 'Entity 360',
+        icon: '👤',
+        items: [
+          { label: 'Entity Search', route: '#/entity-360/search' },
+          { label: 'Entity Profile', route: '#/entity-360/CUST-00192837' },
+          { label: 'Identity Graph', route: '#/entity-360/CUST-00192837/graph' },
+          { label: 'Entity History', route: '#/entity-360/CUST-00192837/history' }
+        ]
+      },
+      {
+        group: 'Governance',
+        icon: '📜',
+        items: [
+          { label: 'Data Lineage', route: '#/governance/lineage' },
+          { label: 'Audit Trail', route: '#/governance/audit' },
+          { label: 'Reference Data', route: '#/governance/reference-data' },
+          { label: 'Policies', route: '#/governance/policies' }
+        ]
+      },
+      {
+        group: 'Activation',
+        icon: '🚀',
+        items: [
+          { label: 'Activation Overview', route: '#/activation' },
+          { label: 'APIs', route: '#/activation/apis', badge: '4' },
+          { label: 'Event Streams', route: '#/activation/events', badge: 'CDC' },
+          { label: 'Data Products', route: '#/activation/data-products', badge: 'Certified' },
+          { label: 'Destinations', route: '#/activation/destinations' }
+        ]
+      },
+      {
+        group: 'Operations',
+        icon: '⚙️',
+        items: [
+          { label: 'Jobs', route: '#/operations/jobs', badge: '1 Running', badgeClass: 'badge-info' },
+          { label: 'Job Details', route: '#/operations/jobs/job-9820' },
+          { label: 'System Health', route: '#/operations/health', badge: 'Healthy' }
+        ]
+      },
+      {
+        group: 'Administration',
+        icon: '🔧',
+        items: [
+          { label: 'Domains', route: '#/admin/domains' },
+          { label: 'Entity Models', route: '#/admin/entity-models' },
+          { label: 'Users & Roles', route: '#/admin/users' },
+          { label: 'AI Providers', route: '#/admin/ai-providers', badge: 'Gemini' },
+          { label: 'Settings', route: '#/admin/settings' }
+        ]
+      }
+    ];
 
-  let groupsHtml = '';
-  navSections.forEach((sec, idx) => {
-    // Check if any item in this section is active
-    const hasActiveChild = sec.items.some(it => currentRoute === it.route || (it.route !== '#/' && currentRoute.startsWith(it.route)));
-    const isCollapsed = !hasActiveChild && idx > 4; // Keep first 5 open by default
+    let groupsHtml = '';
+    navSections.forEach((sec, idx) => {
+      // Check if any item in this section is active
+      const hasActiveChild = sec.items.some(it => currentRoute === it.route || (it.route !== '#/' && currentRoute.startsWith(it.route)));
+      const isCollapsed = !hasActiveChild && idx > 4; // Keep first 5 open by default
 
-    const itemsHtml = sec.items.map(it => {
-      const isActive = currentRoute === it.route || (it.route !== '#/' && currentRoute.startsWith(it.route));
-      const badgeHtml = it.badge ? `<span class="nav-link-badge ${it.badgeClass || ''}">${it.badge}</span>` : '';
-      return `
+      const itemsHtml = sec.items.map(it => {
+        const isActive = currentRoute === it.route || (it.route !== '#/' && currentRoute.startsWith(it.route));
+        const badgeHtml = it.badge ? `<span class="nav-link-badge ${it.badgeClass || ''}">${it.badge}</span>` : '';
+        return `
         <a href="${it.route}" class="nav-link ${isActive ? 'active' : ''}" onclick="window.unifyToggleMobileSidebar(false)">
           <span>${it.label}</span>
           ${badgeHtml}
         </a>
       `;
-    }).join('');
+      }).join('');
 
-    groupsHtml += `
+      groupsHtml += `
       <div class="nav-group ${isCollapsed ? 'collapsed' : ''}" data-group="${sec.group}">
         <div class="nav-group-header" onclick="this.parentElement.classList.toggle('collapsed')">
           <span class="group-title">
@@ -1079,9 +1079,9 @@ function renderSidebar() {
         </div>
       </div>
     `;
-  });
+    });
 
-  return `
+    return `
     <aside class="app-sidebar" id="app-sidebar">
       <div class="sidebar-header">
         <a href="#/" class="brand-logo" onclick="window.unifyToggleMobileSidebar(false)">
@@ -1118,16 +1118,16 @@ function renderSidebar() {
       </div>
     </aside>
   `;
-}
+  }
 
 
-// ==================== src/components/topbar.js ====================
-// Topbar Component for Global Application Shell
-function renderTopbar() {
-  const state = store.getState();
-  const personas = ['Data Architect', 'Data Steward', 'Business User', 'Platform Administrator'];
+  // ==================== src/components/topbar.js ====================
+  // Topbar Component for Global Application Shell
+  function renderTopbar() {
+    const state = store.getState();
+    const personas = ['Data Architect', 'Data Steward', 'Business User', 'Platform Administrator'];
 
-  return `
+    return `
     <header class="app-topbar">
       <div class="topbar-left">
         <button class="mobile-nav-toggle" onclick="window.unifyToggleMobileSidebar()" aria-label="Open Navigation Menu">
@@ -1180,7 +1180,7 @@ function renderTopbar() {
             ${(state.currentUser?.name || 'MS').split(' ').map(n => n[0]).join('').slice(0, 2)}
           </div>
           <div style="display: flex; flex-direction: column;">
-            <span style="font-size: 12px; font-weight: 600; color: #fff;">${state.currentUser?.name || 'Manjit Singh'}</span>
+            <span style="font-size: 12px; font-weight: 600; color: #fff;">${state.currentUser?.name || 'John Smith'}</span>
             <span style="font-size: 10px; color: var(--text-muted);">${state.activePersona}</span>
           </div>
           <button class="btn btn-ghost btn-sm" onclick="window.unifyLogout()" title="Sign Out of Enterprise Fabric" style="padding: 4px 6px; font-size: 11px; margin-left: 4px; color: var(--text-muted);">
@@ -1190,37 +1190,37 @@ function renderTopbar() {
       </div>
     </header>
   `;
-}
+  }
 
 
-// ==================== src/components/aiAssistant.js ====================
-// AI Assistant Component implementing Section 4 Global AI Assistant
-function renderAiAssistant() {
-  const state = store.getState();
-  const isOpen = state.isAiDrawerOpen;
+  // ==================== src/components/aiAssistant.js ====================
+  // AI Assistant Component implementing Section 4 Global AI Assistant
+  function renderAiAssistant() {
+    const state = store.getState();
+    const isOpen = state.isAiDrawerOpen;
 
-  const messagesHtml = state.aiMessages.map(msg => {
-    const isBot = msg.sender === 'assistant';
-    const triadBadge = msg.triadStatus ? `
+    const messagesHtml = state.aiMessages.map(msg => {
+      const isBot = msg.sender === 'assistant';
+      const triadBadge = msg.triadStatus ? `
       <div style="margin-bottom: 6px;">
         <span class="badge-triad ${msg.triadStatus === 'SYSTEM FACT' ? 'badge-system-fact' : (msg.triadStatus === 'USER DECISION' ? 'badge-user-decision' : 'badge-ai-rec')}">${msg.triadStatus}</span>
       </div>
     ` : '';
 
-    const linksHtml = msg.links && msg.links.length > 0 ? `
+      const linksHtml = msg.links && msg.links.length > 0 ? `
       <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 4px;">
         <div style="font-size: 11px; font-weight: 600; color: #a5b4fc; text-transform: uppercase;">Direct Application Links</div>
         ${msg.links.map(l => {
-          if (l.route) {
-            return `<a href="${l.route}" onclick="window.unifyToggleAiDrawer(false)" class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start;">🔗 ${l.label}</a>`;
-          } else {
-            return `<button class="btn btn-secondary btn-sm" onclick="window.unifyAskAiFromPrompt('${l.query.replace(/'/g, "\\'")}')" style="text-align: left; justify-content: flex-start;">💬 ${l.label}</button>`;
-          }
-        }).join('')}
+        if (l.route) {
+          return `<a href="${l.route}" onclick="window.unifyToggleAiDrawer(false)" class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start;">🔗 ${l.label}</a>`;
+        } else {
+          return `<button class="btn btn-secondary btn-sm" onclick="window.unifyAskAiFromPrompt('${l.query.replace(/'/g, "\\'")}')" style="text-align: left; justify-content: flex-start;">💬 ${l.label}</button>`;
+        }
+      }).join('')}
       </div>
     ` : '';
 
-    return `
+      return `
       <div style="display: flex; flex-direction: column; gap: 4px; align-self: ${isBot ? 'flex-start' : 'flex-end'}; max-width: 90%;">
         <div style="font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 4px;">
           ${isBot ? '✦ Unify AI Copilot' : 'You'}
@@ -1232,9 +1232,9 @@ function renderAiAssistant() {
         </div>
       </div>
     `;
-  }).join('');
+    }).join('');
 
-  return `
+    return `
     <div class="ai-drawer-overlay ${isOpen ? 'open' : ''}" onclick="window.unifyToggleAiDrawer(false)"></div>
     <aside class="ai-drawer ${isOpen ? 'open' : ''}">
       <div class="ai-drawer-header">
@@ -1264,16 +1264,16 @@ function renderAiAssistant() {
       </div>
     </aside>
   `;
-}
+  }
 
 
-// ==================== src/components/globalSearch.js ====================
-// Global Search Modal Component (Section 46)
-function renderGlobalSearch() {
-  const state = store.getState();
-  const isOpen = state.isSearchOpen;
+  // ==================== src/components/globalSearch.js ====================
+  // Global Search Modal Component (Section 46)
+  function renderGlobalSearch() {
+    const state = store.getState();
+    const isOpen = state.isSearchOpen;
 
-  return `
+    return `
     <div class="modal-overlay ${isOpen ? 'open' : ''}" id="search-modal-overlay" onclick="if(event.target === this) window.unifyCloseSearch()">
       <div class="modal-content" style="max-width: 600px; margin-top: -10vh;">
         <div style="padding: 14px 18px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 10px;">
@@ -1304,13 +1304,13 @@ function renderGlobalSearch() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/components/shell.js ====================
-// Global Application Shell Component (Section 3)
-function renderAppShell() {
-  return `
+  // ==================== src/components/shell.js ====================
+  // Global Application Shell Component (Section 3)
+  function renderAppShell() {
+    return `
     <div id="app">
       <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="window.unifyToggleMobileSidebar(false)"></div>
       <div id="sidebar-container">${renderSidebar()}</div>
@@ -1340,13 +1340,13 @@ function renderAppShell() {
       <div id="search-modal-container">${renderGlobalSearch()}</div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/auth/login.js ====================
-// Authentication Page: Enterprise Login (Route: /login)
-async function renderLoginPage() {
-  return `
+  // ==================== src/pages/auth/login.js ====================
+  // Authentication Page: Enterprise Login (Route: /login)
+  async function renderLoginPage() {
+    return `
     <div style="min-height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 20%, #171b34 0%, #080b12 70%); padding: 20px; box-sizing: border-box;">
       <div style="width: 100%; max-width: 440px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 32px; box-shadow: var(--shadow-lg);">
         
@@ -1367,7 +1367,7 @@ async function renderLoginPage() {
         <form onsubmit="window.unifyHandleLogin(event)" style="display: flex; flex-direction: column; gap: 14px;">
           <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label" style="font-size: 12px;">Corporate Work Email</label>
-            <input type="email" id="login-email" class="form-input" placeholder="name@enterprise.com" value="manjit@unify.ai" required style="padding: 10px 12px; font-size: 13px;">
+            <input type="email" id="login-email" class="form-input" placeholder="name@enterprise.com" value="John@unify.ai" required style="padding: 10px 12px; font-size: 13px;">
           </div>
 
           <div class="form-group" style="margin-bottom: 0;">
@@ -1416,7 +1416,7 @@ async function renderLoginPage() {
             ✦ Demo Fast-Sign-In Presets
           </div>
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
-            <button class="btn btn-ghost btn-sm" onclick="window.unifyQuickLogin('Manjit Singh', 'Data Architect', 'manjit@unify.ai')" style="font-size: 11px; padding: 4px; justify-content: flex-start; text-align: left;">
+            <button class="btn btn-ghost btn-sm" onclick="window.unifyQuickLogin('John Smith', 'Data Architect', 'John@unify.ai')" style="font-size: 11px; padding: 4px; justify-content: flex-start; text-align: left;">
               👤 Data Architect
             </button>
             <button class="btn btn-ghost btn-sm" onclick="window.unifyQuickLogin('Elena Rostova', 'Data Steward', 'elena@unify.ai')" style="font-size: 11px; padding: 4px; justify-content: flex-start; text-align: left;">
@@ -1440,13 +1440,13 @@ async function renderLoginPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/auth/register.js ====================
-// Authentication Page: Enterprise User Registration & Tenant Provisioning (Route: /register)
-async function renderRegisterPage() {
-  return `
+  // ==================== src/pages/auth/register.js ====================
+  // Authentication Page: Enterprise User Registration & Tenant Provisioning (Route: /register)
+  async function renderRegisterPage() {
+    return `
     <div style="min-height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 20%, #171b34 0%, #080b12 70%); padding: 20px; box-sizing: border-box;">
       <div style="width: 100%; max-width: 520px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 32px; box-shadow: var(--shadow-lg);">
         
@@ -1468,7 +1468,7 @@ async function renderRegisterPage() {
           <div class="grid-2">
             <div class="form-group" style="margin-bottom: 0;">
               <label class="form-label" style="font-size: 12px;">Full Legal Name</label>
-              <input type="text" id="reg-name" class="form-input" placeholder="Manjit Singh" required style="padding: 9px 12px; font-size: 12.5px;">
+              <input type="text" id="reg-name" class="form-input" placeholder="John Smith" required style="padding: 9px 12px; font-size: 12.5px;">
             </div>
             <div class="form-group" style="margin-bottom: 0;">
               <label class="form-label" style="font-size: 12px;">Corporate Work Email</label>
@@ -1532,13 +1532,13 @@ async function renderRegisterPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/auth/forgotPassword.js ====================
-// Authentication Page: Password Recovery (Route: /forgot-password)
-async function renderForgotPasswordPage() {
-  return `
+  // ==================== src/pages/auth/forgotPassword.js ====================
+  // Authentication Page: Password Recovery (Route: /forgot-password)
+  async function renderForgotPasswordPage() {
+    return `
     <div style="min-height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 20%, #171b34 0%, #080b12 70%); padding: 20px; box-sizing: border-box;">
       <div style="width: 100%; max-width: 440px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 32px; box-shadow: var(--shadow-lg);">
         
@@ -1577,16 +1577,16 @@ async function renderForgotPasswordPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/overview.js ====================
-// Page 5: Overview Dashboard (Route: /)
-async function renderOverviewPage() {
-  const sources = await repository.getSources();
-  const jobs = await repository.getJobs();
+  // ==================== src/pages/overview.js ====================
+  // Page 5: Overview Dashboard (Route: /)
+  async function renderOverviewPage() {
+    const sources = await repository.getSources();
+    const jobs = await repository.getJobs();
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([{ label: 'Fabric Overview', route: '#/' }])}
@@ -1824,21 +1824,21 @@ async function renderOverviewPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/dataFoundation/sources.js ====================
-// Page 6: Sources Catalog (Route: /data-foundation/sources)
-async function renderSourcesPage() {
-  const sources = await repository.getSources();
+  // ==================== src/pages/dataFoundation/sources.js ====================
+  // Page 6: Sources Catalog (Route: /data-foundation/sources)
+  async function renderSourcesPage() {
+    const sources = await repository.getSources();
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Data Foundation', route: '#/data-foundation/sources' },
-          { label: 'Sources', route: '#/data-foundation/sources' }
-        ])}
+      { label: 'Data Foundation', route: '#/data-foundation/sources' },
+      { label: 'Sources', route: '#/data-foundation/sources' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -1937,20 +1937,20 @@ async function renderSourcesPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/dataFoundation/addSource.js ====================
-// Page 7: Add Source 7-Step Wizard (Route: /data-foundation/sources/new)
-async function renderAddSourcePage() {
-  return `
+  // ==================== src/pages/dataFoundation/addSource.js ====================
+  // Page 7: Add Source 7-Step Wizard (Route: /data-foundation/sources/new)
+  async function renderAddSourcePage() {
+    return `
     <div class="page-container" style="max-width: 900px; margin: 0 auto;">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Data Foundation', route: '#/data-foundation/sources' },
-          { label: 'Sources', route: '#/data-foundation/sources' },
-          { label: 'New Source Connection', route: '#/data-foundation/sources/new' }
-        ])}
+      { label: 'Data Foundation', route: '#/data-foundation/sources' },
+      { label: 'Sources', route: '#/data-foundation/sources' },
+      { label: 'New Source Connection', route: '#/data-foundation/sources/new' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -2014,15 +2014,15 @@ async function renderAddSourcePage() {
 
           <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;" id="source-type-selector">
             ${[
-              { id: 'Salesforce', icon: '☁️', label: 'Salesforce', desc: 'CRM, Accounts & Contacts', recommended: true },
-              { id: 'Databricks', icon: '🧱', label: 'Databricks', desc: 'Delta Lake & Unity Catalog' },
-              { id: 'Snowflake', icon: '❄️', label: 'Snowflake', desc: 'Enterprise Data Warehouse' },
-              { id: 'PostgreSQL', icon: '🐘', label: 'PostgreSQL', desc: 'Transactional SQL Database' },
-              { id: 'SAP', icon: '🏢', label: 'SAP S/4HANA', desc: 'ERP Business Partners' },
-              { id: 'Oracle', icon: '🔴', label: 'Oracle EBS', desc: 'Core Financials & Supply' },
-              { id: 'Reltio', icon: '🔄', label: 'Reltio MDM', desc: 'Legacy Master Hub' },
-              { id: 'REST', icon: '⚡', label: 'REST API', desc: 'Zero-copy webhook & pull' }
-            ].map((t, idx) => `
+        { id: 'Salesforce', icon: '☁️', label: 'Salesforce', desc: 'CRM, Accounts & Contacts', recommended: true },
+        { id: 'Databricks', icon: '🧱', label: 'Databricks', desc: 'Delta Lake & Unity Catalog' },
+        { id: 'Snowflake', icon: '❄️', label: 'Snowflake', desc: 'Enterprise Data Warehouse' },
+        { id: 'PostgreSQL', icon: '🐘', label: 'PostgreSQL', desc: 'Transactional SQL Database' },
+        { id: 'SAP', icon: '🏢', label: 'SAP S/4HANA', desc: 'ERP Business Partners' },
+        { id: 'Oracle', icon: '🔴', label: 'Oracle EBS', desc: 'Core Financials & Supply' },
+        { id: 'Reltio', icon: '🔄', label: 'Reltio MDM', desc: 'Legacy Master Hub' },
+        { id: 'REST', icon: '⚡', label: 'REST API', desc: 'Zero-copy webhook & pull' }
+      ].map((t, idx) => `
               <div 
                 style="padding: 14px; border: 1px solid ${t.recommended ? 'var(--primary)' : 'var(--border-default)'}; background: ${t.recommended ? 'rgba(99, 102, 241, 0.1)' : 'var(--bg-input)'}; border-radius: var(--radius-md); cursor: pointer; transition: all 0.15s;"
                 onclick="window.unifySelectSourceType('${t.id}', this)"
@@ -2113,13 +2113,13 @@ async function renderAddSourcePage() {
 
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
             ${[
-              { name: 'Account', records: '2,048,190', checked: true, desc: 'Corporate & Individual Accounts' },
-              { name: 'Contact', records: '4,192,000', checked: true, desc: 'Associated individual stakeholders' },
-              { name: 'Opportunity', records: '810,400', checked: false, desc: 'Pipeline revenue & deals' },
-              { name: 'Lead', records: '1,500,000', checked: false, desc: 'Unqualified inbound prospects' },
-              { name: 'Case', records: '920,000', checked: false, desc: 'Customer support tickets' },
-              { name: 'Custom: Billing_Profile__c', records: '1,940,000', checked: false, desc: 'Custom invoice linkage' }
-            ].map(o => `
+        { name: 'Account', records: '2,048,190', checked: true, desc: 'Corporate & Individual Accounts' },
+        { name: 'Contact', records: '4,192,000', checked: true, desc: 'Associated individual stakeholders' },
+        { name: 'Opportunity', records: '810,400', checked: false, desc: 'Pipeline revenue & deals' },
+        { name: 'Lead', records: '1,500,000', checked: false, desc: 'Unqualified inbound prospects' },
+        { name: 'Case', records: '920,000', checked: false, desc: 'Customer support tickets' },
+        { name: 'Custom: Billing_Profile__c', records: '1,940,000', checked: false, desc: 'Custom invoice linkage' }
+      ].map(o => `
               <label style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--bg-input); border: 1px solid var(--border-default); border-radius: var(--radius-md); cursor: pointer;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                   <input type="checkbox" ${o.checked ? 'checked' : ''} class="obj-check" value="${o.name}">
@@ -2222,23 +2222,23 @@ async function renderAddSourcePage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/dataFoundation/sourceDetails.js ====================
-// Page 8: Source Details with 8 Tabs (Route: /data-foundation/sources/:sourceId)
-async function renderSourceDetailsPage(params) {
-  const sourceId = params.sourceId || 'src-salesforce';
-  const source = (await repository.getSource(sourceId)) || (await repository.getSources())[0];
+  // ==================== src/pages/dataFoundation/sourceDetails.js ====================
+  // Page 8: Source Details with 8 Tabs (Route: /data-foundation/sources/:sourceId)
+  async function renderSourceDetailsPage(params) {
+    const sourceId = params.sourceId || 'src-salesforce';
+    const source = (await repository.getSource(sourceId)) || (await repository.getSources())[0];
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Data Foundation', route: '#/data-foundation/sources' },
-          { label: 'Sources', route: '#/data-foundation/sources' },
-          { label: source.name, route: `#/data-foundation/sources/${source.id}` }
-        ])}
+      { label: 'Data Foundation', route: '#/data-foundation/sources' },
+      { label: 'Sources', route: '#/data-foundation/sources' },
+      { label: source.name, route: `#/data-foundation/sources/${source.id}` }
+    ])}
       </div>
 
       <!-- Header with Status and Primary Actions -->
@@ -2418,21 +2418,21 @@ async function renderSourceDetailsPage(params) {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/dataFoundation/discovery.js ====================
-// Page 9: Data Discovery (Route: /data-foundation/discovery)
-async function renderDiscoveryPage() {
-  const datasets = await repository.getDiscoveredDatasets();
+  // ==================== src/pages/dataFoundation/discovery.js ====================
+  // Page 9: Data Discovery (Route: /data-foundation/discovery)
+  async function renderDiscoveryPage() {
+    const datasets = await repository.getDiscoveredDatasets();
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Data Foundation', route: '#/data-foundation/sources' },
-          { label: 'Data Discovery', route: '#/data-foundation/discovery' }
-        ])}
+      { label: 'Data Foundation', route: '#/data-foundation/sources' },
+      { label: 'Data Discovery', route: '#/data-foundation/discovery' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -2505,22 +2505,22 @@ async function renderDiscoveryPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/dataFoundation/mapping.js ====================
-// Page 10: AI Schema Mapping Studio (Route: /data-foundation/mappings)
-async function renderMappingPage() {
-  const mappings = await repository.getSchemaMappings();
-  const highConfidenceCount = mappings.filter(m => m.confidence >= 95 && m.triadStatus !== 'USER DECISION').length;
+  // ==================== src/pages/dataFoundation/mapping.js ====================
+  // Page 10: AI Schema Mapping Studio (Route: /data-foundation/mappings)
+  async function renderMappingPage() {
+    const mappings = await repository.getSchemaMappings();
+    const highConfidenceCount = mappings.filter(m => m.confidence >= 95 && m.triadStatus !== 'USER DECISION').length;
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Data Foundation', route: '#/data-foundation/sources' },
-          { label: 'Schema Mapping Studio', route: '#/data-foundation/mappings' }
-        ])}
+      { label: 'Data Foundation', route: '#/data-foundation/sources' },
+      { label: 'Schema Mapping Studio', route: '#/data-foundation/mappings' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -2629,21 +2629,21 @@ async function renderMappingPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/dataFoundation/profiles.js ====================
-// Page 11: Data Profiles (Route: /data-foundation/profiles)
-async function renderProfilesPage() {
-  const profiles = await repository.getDataProfiles();
+  // ==================== src/pages/dataFoundation/profiles.js ====================
+  // Page 11: Data Profiles (Route: /data-foundation/profiles)
+  async function renderProfilesPage() {
+    const profiles = await repository.getDataProfiles();
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Data Foundation', route: '#/data-foundation/sources' },
-          { label: 'Data Profiles', route: '#/data-foundation/profiles' }
-        ])}
+      { label: 'Data Foundation', route: '#/data-foundation/sources' },
+      { label: 'Data Profiles', route: '#/data-foundation/profiles' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -2758,22 +2758,22 @@ async function renderProfilesPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/dataQuality/dqOverview.js ====================
-// Page 12: Data Quality Overview (Route: /data-quality)
-async function renderDqOverviewPage() {
-  const rules = await repository.getDQRules();
-  const issues = await repository.getDQIssues();
+  // ==================== src/pages/dataQuality/dqOverview.js ====================
+  // Page 12: Data Quality Overview (Route: /data-quality)
+  async function renderDqOverviewPage() {
+    const rules = await repository.getDQRules();
+    const issues = await repository.getDQIssues();
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Data Quality', route: '#/data-quality' },
-          { label: 'Overview', route: '#/data-quality' }
-        ])}
+      { label: 'Data Quality', route: '#/data-quality' },
+      { label: 'Overview', route: '#/data-quality' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -2918,21 +2918,21 @@ async function renderDqOverviewPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/dataQuality/dqRules.js ====================
-// Page 13: DQ Rules Registry (Route: /data-quality/rules)
-async function renderDqRulesPage() {
-  const rules = await repository.getDQRules();
+  // ==================== src/pages/dataQuality/dqRules.js ====================
+  // Page 13: DQ Rules Registry (Route: /data-quality/rules)
+  async function renderDqRulesPage() {
+    const rules = await repository.getDQRules();
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Data Quality', route: '#/data-quality' },
-          { label: 'Rules Registry', route: '#/data-quality/rules' }
-        ])}
+      { label: 'Data Quality', route: '#/data-quality' },
+      { label: 'Rules Registry', route: '#/data-quality/rules' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -2996,20 +2996,20 @@ async function renderDqRulesPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/dataQuality/dqDesigner.js ====================
-// Page 14: DQ Rule Designer (Route: /data-quality/rules/new)
-async function renderDqDesignerPage() {
-  return `
+  // ==================== src/pages/dataQuality/dqDesigner.js ====================
+  // Page 14: DQ Rule Designer (Route: /data-quality/rules/new)
+  async function renderDqDesignerPage() {
+    return `
     <div class="page-container" style="max-width: 900px; margin: 0 auto;">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Data Quality', route: '#/data-quality' },
-          { label: 'Rules Registry', route: '#/data-quality/rules' },
-          { label: 'New Rule Designer', route: '#/data-quality/rules/new' }
-        ])}
+      { label: 'Data Quality', route: '#/data-quality' },
+      { label: 'Rules Registry', route: '#/data-quality/rules' },
+      { label: 'New Rule Designer', route: '#/data-quality/rules/new' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -3107,21 +3107,21 @@ async function renderDqDesignerPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/dataQuality/dqIssues.js ====================
-// Page 15: DQ Issues Triage (Route: /data-quality/issues)
-async function renderDqIssuesPage() {
-  const issues = await repository.getDQIssues();
+  // ==================== src/pages/dataQuality/dqIssues.js ====================
+  // Page 15: DQ Issues Triage (Route: /data-quality/issues)
+  async function renderDqIssuesPage() {
+    const issues = await repository.getDQIssues();
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Data Quality', route: '#/data-quality' },
-          { label: 'DQ Issues Triage', route: '#/data-quality/issues' }
-        ])}
+      { label: 'Data Quality', route: '#/data-quality' },
+      { label: 'DQ Issues Triage', route: '#/data-quality/issues' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -3207,19 +3207,19 @@ async function renderDqIssuesPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/unification/unifOverview.js ====================
-// Page 16: Unification Overview & Funnel (Route: /unification)
-async function renderUnifOverviewPage() {
-  return `
+  // ==================== src/pages/unification/unifOverview.js ====================
+  // Page 16: Unification Overview & Funnel (Route: /unification)
+  async function renderUnifOverviewPage() {
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Unification', route: '#/unification' },
-          { label: 'Overview', route: '#/unification' }
-        ])}
+      { label: 'Unification', route: '#/unification' },
+      { label: 'Overview', route: '#/unification' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -3341,21 +3341,21 @@ async function renderUnifOverviewPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/unification/matchStrategies.js ====================
-// Page 17: Match Strategies Catalog (Route: /unification/match-strategies)
-async function renderMatchStrategiesPage() {
-  const strategies = await repository.getMatchStrategies();
+  // ==================== src/pages/unification/matchStrategies.js ====================
+  // Page 17: Match Strategies Catalog (Route: /unification/match-strategies)
+  async function renderMatchStrategiesPage() {
+    const strategies = await repository.getMatchStrategies();
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Unification', route: '#/unification' },
-          { label: 'Match Strategies', route: '#/unification/match-strategies' }
-        ])}
+      { label: 'Unification', route: '#/unification' },
+      { label: 'Match Strategies', route: '#/unification/match-strategies' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -3424,20 +3424,20 @@ async function renderMatchStrategiesPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/unification/strategyDesigner.js ====================
-// Page 18: 6-Step Match Strategy Designer (Route: /unification/match-strategies/new)
-async function renderStrategyDesignerPage() {
-  return `
+  // ==================== src/pages/unification/strategyDesigner.js ====================
+  // Page 18: 6-Step Match Strategy Designer (Route: /unification/match-strategies/new)
+  async function renderStrategyDesignerPage() {
+    return `
     <div class="page-container" style="max-width: 900px; margin: 0 auto;">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Unification', route: '#/unification' },
-          { label: 'Match Strategies', route: '#/unification/match-strategies' },
-          { label: 'Strategy Designer', route: '#/unification/match-strategies/new' }
-        ])}
+      { label: 'Unification', route: '#/unification' },
+      { label: 'Match Strategies', route: '#/unification/match-strategies' },
+      { label: 'Strategy Designer', route: '#/unification/match-strategies/new' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -3552,20 +3552,20 @@ async function renderStrategyDesignerPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/unification/simulation.js ====================
-// Page 19: Match Simulation & Benchmarking (Route: /unification/simulations/:simulationId)
-async function renderSimulationPage() {
-  return `
+  // ==================== src/pages/unification/simulation.js ====================
+  // Page 19: Match Simulation & Benchmarking (Route: /unification/simulations/:simulationId)
+  async function renderSimulationPage() {
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Unification', route: '#/unification' },
-          { label: 'Simulations', route: '#/unification/simulations/sim-latest' },
-          { label: 'Simulation #SIM-9824', route: '#/unification/simulations/sim-latest' }
-        ])}
+      { label: 'Unification', route: '#/unification' },
+      { label: 'Simulations', route: '#/unification/simulations/sim-latest' },
+      { label: 'Simulation #SIM-9824', route: '#/unification/simulations/sim-latest' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -3678,21 +3678,21 @@ async function renderSimulationPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/unification/matchResults.js ====================
-// Page 20: Match Results (Route: /unification/matches)
-async function renderMatchResultsPage() {
-  const matches = await repository.getMatches();
+  // ==================== src/pages/unification/matchResults.js ====================
+  // Page 20: Match Results (Route: /unification/matches)
+  async function renderMatchResultsPage() {
+    const matches = await repository.getMatches();
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Unification', route: '#/unification' },
-          { label: 'Match Results', route: '#/unification/matches' }
-        ])}
+      { label: 'Unification', route: '#/unification' },
+      { label: 'Match Results', route: '#/unification/matches' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -3780,21 +3780,21 @@ async function renderMatchResultsPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/unification/goldenEntities.js ====================
-// Page 23: Golden Entities Catalog (Route: /unification/golden-entities)
-async function renderGoldenEntitiesPage() {
-  const goldenList = await repository.getGoldenEntities();
+  // ==================== src/pages/unification/goldenEntities.js ====================
+  // Page 23: Golden Entities Catalog (Route: /unification/golden-entities)
+  async function renderGoldenEntitiesPage() {
+    const goldenList = await repository.getGoldenEntities();
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Unification', route: '#/unification' },
-          { label: 'Golden Entities Master Catalog', route: '#/unification/golden-entities' }
-        ])}
+      { label: 'Unification', route: '#/unification' },
+      { label: 'Golden Entities Master Catalog', route: '#/unification/golden-entities' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -3879,21 +3879,21 @@ async function renderGoldenEntitiesPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/stewardship/reviewQueue.js ====================
-// Page 22: Stewardship Queue (Route: /stewardship)
-async function renderReviewQueuePage() {
-  const matches = await repository.getMatches();
+  // ==================== src/pages/stewardship/reviewQueue.js ====================
+  // Page 22: Stewardship Queue (Route: /stewardship)
+  async function renderReviewQueuePage() {
+    const matches = await repository.getMatches();
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Stewardship', route: '#/stewardship' },
-          { label: 'Review Queue', route: '#/stewardship' }
-        ])}
+      { label: 'Stewardship', route: '#/stewardship' },
+      { label: 'Review Queue', route: '#/stewardship' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -3984,23 +3984,23 @@ async function renderReviewQueuePage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/stewardship/matchReview.js ====================
-// Page 21: Match Review Studio (Route: /stewardship/reviews/:matchId)
-async function renderMatchReviewPage(params) {
-  const matchId = params.matchId || 'match-101';
-  const match = (await repository.getMatch(matchId)) || (await repository.getMatches())[0];
+  // ==================== src/pages/stewardship/matchReview.js ====================
+  // Page 21: Match Review Studio (Route: /stewardship/reviews/:matchId)
+  async function renderMatchReviewPage(params) {
+    const matchId = params.matchId || 'match-101';
+    const match = (await repository.getMatch(matchId)) || (await repository.getMatches())[0];
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Stewardship', route: '#/stewardship' },
-          { label: 'Review Queue', route: '#/stewardship' },
-          { label: `Review #${match.id} (Robert Smith)`, route: `#/stewardship/reviews/${match.id}` }
-        ])}
+      { label: 'Stewardship', route: '#/stewardship' },
+      { label: 'Review Queue', route: '#/stewardship' },
+      { label: `Review #${match.id} (Robert Smith)`, route: `#/stewardship/reviews/${match.id}` }
+    ])}
       </div>
 
       <div class="page-header">
@@ -4125,21 +4125,21 @@ async function renderMatchReviewPage(params) {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/entity360/entitySearch.js ====================
-// Page 24: Entity Search (Route: /entity-360/search)
-async function renderEntitySearchPage() {
-  const goldenList = await repository.getGoldenEntities();
+  // ==================== src/pages/entity360/entitySearch.js ====================
+  // Page 24: Entity Search (Route: /entity-360/search)
+  async function renderEntitySearchPage() {
+    const goldenList = await repository.getGoldenEntities();
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Entity 360', route: '#/entity-360/search' },
-          { label: 'Global Entity Search', route: '#/entity-360/search' }
-        ])}
+      { label: 'Entity 360', route: '#/entity-360/search' },
+      { label: 'Global Entity Search', route: '#/entity-360/search' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -4203,23 +4203,23 @@ async function renderEntitySearchPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/entity360/entityProfile.js ====================
-// Page 25 & 26: Entity 360 Profile Studio (Route: /entity-360/:entityId)
-async function renderEntityProfilePage(params) {
-  const entityId = params.entityId || 'CUST-00192837';
-  const entity = (await repository.getGoldenEntity(entityId)) || (await repository.getGoldenEntities())[0];
+  // ==================== src/pages/entity360/entityProfile.js ====================
+  // Page 25 & 26: Entity 360 Profile Studio (Route: /entity-360/:entityId)
+  async function renderEntityProfilePage(params) {
+    const entityId = params.entityId || 'CUST-00192837';
+    const entity = (await repository.getGoldenEntity(entityId)) || (await repository.getGoldenEntities())[0];
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Entity 360', route: '#/entity-360/search' },
-          { label: 'Golden Master Profiles', route: '#/unification/golden-entities' },
-          { label: `${entity.name} (${entity.id})`, route: `#/entity-360/${entity.id}` }
-        ])}
+      { label: 'Entity 360', route: '#/entity-360/search' },
+      { label: 'Golden Master Profiles', route: '#/unification/golden-entities' },
+      { label: `${entity.name} (${entity.id})`, route: `#/entity-360/${entity.id}` }
+    ])}
       </div>
 
       <!-- Entity 360 Header (Section 25) -->
@@ -4319,9 +4319,9 @@ async function renderEntityProfilePage(params) {
       <div class="tab-content-pane" id="tab-ent-sources" style="display: none;">
         <div class="grid-2">
           ${(entity.sources || [
-            { source: 'Salesforce CRM', id: 'CRM-10231', status: 'Active Contributor', mergedAt: '2026-09-22 14:30' },
-            { source: 'SAP ERP', id: 'ERP-88391', status: 'Active Contributor', mergedAt: '2026-09-22 14:30' }
-          ]).map(s => `
+        { source: 'Salesforce CRM', id: 'CRM-10231', status: 'Active Contributor', mergedAt: '2026-09-22 14:30' },
+        { source: 'SAP ERP', id: 'ERP-88391', status: 'Active Contributor', mergedAt: '2026-09-22 14:30' }
+      ]).map(s => `
             <div class="card">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <span class="badge badge-info">${s.source}</span>
@@ -4357,10 +4357,10 @@ async function renderEntityProfilePage(params) {
           <h3 style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 14px;">Entity Lifecycle & Survivorship Timeline</h3>
           <div style="display: flex; flex-direction: column; gap: 12px;">
             ${(entity.history || [
-              { date: 'Today, 10:14 AM', event: 'Survivorship Re-calculation', details: 'Revenue updated from SAP ERP winning rule.', actor: 'System Rule #4' },
-              { date: 'Sep 22, 14:30', event: 'Match Approved & Merged', details: 'CRM-10231 merged with ERP-88391 with 96.7% match confidence.', actor: 'Elena Rostova (Steward)' },
-              { date: 'Sep 20, 09:12', event: 'Golden Entity Created', details: 'Initial record established from Salesforce Account import.', actor: 'Pipeline Job #2049' }
-            ]).map(h => `
+        { date: 'Today, 10:14 AM', event: 'Survivorship Re-calculation', details: 'Revenue updated from SAP ERP winning rule.', actor: 'System Rule #4' },
+        { date: 'Sep 22, 14:30', event: 'Match Approved & Merged', details: 'CRM-10231 merged with ERP-88391 with 96.7% match confidence.', actor: 'Elena Rostova (Steward)' },
+        { date: 'Sep 20, 09:12', event: 'Golden Entity Created', details: 'Initial record established from Salesforce Account import.', actor: 'Pipeline Job #2049' }
+      ]).map(h => `
               <div style="display: flex; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle);">
                 <div style="width: 120px; font-size: 11px; color: var(--text-dim);">${h.date}</div>
                 <div style="flex: 1;">
@@ -4375,23 +4375,23 @@ async function renderEntityProfilePage(params) {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/entity360/identityGraph.js ====================
-// Page 27: Interactive Identity Graph (Route: /entity-360/:entityId/graph)
-async function renderIdentityGraphPage(params) {
-  const entityId = params.entityId || 'CUST-00192837';
-  const entity = (await repository.getGoldenEntity(entityId)) || (await repository.getGoldenEntities())[0];
+  // ==================== src/pages/entity360/identityGraph.js ====================
+  // Page 27: Interactive Identity Graph (Route: /entity-360/:entityId/graph)
+  async function renderIdentityGraphPage(params) {
+    const entityId = params.entityId || 'CUST-00192837';
+    const entity = (await repository.getGoldenEntity(entityId)) || (await repository.getGoldenEntities())[0];
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Entity 360', route: '#/entity-360/search' },
-          { label: `${entity.name} (${entity.id})`, route: `#/entity-360/${entity.id}` },
-          { label: 'Identity Graph', route: `#/entity-360/${entity.id}/graph` }
-        ])}
+      { label: 'Entity 360', route: '#/entity-360/search' },
+      { label: `${entity.name} (${entity.id})`, route: `#/entity-360/${entity.id}` },
+      { label: 'Identity Graph', route: `#/entity-360/${entity.id}/graph` }
+    ])}
       </div>
 
       <div class="page-header">
@@ -4492,23 +4492,23 @@ async function renderIdentityGraphPage(params) {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/entity360/entityHistory.js ====================
-// Page 28: Entity History & Audit Timeline (Route: /entity-360/:entityId/history)
-async function renderEntityHistoryPage(params) {
-  const entityId = params.entityId || 'CUST-00192837';
-  const entity = (await repository.getGoldenEntity(entityId)) || (await repository.getGoldenEntities())[0];
+  // ==================== src/pages/entity360/entityHistory.js ====================
+  // Page 28: Entity History & Audit Timeline (Route: /entity-360/:entityId/history)
+  async function renderEntityHistoryPage(params) {
+    const entityId = params.entityId || 'CUST-00192837';
+    const entity = (await repository.getGoldenEntity(entityId)) || (await repository.getGoldenEntities())[0];
 
-  return `
+    return `
     <div class="page-container" style="max-width: 850px; margin: 0 auto;">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Entity 360', route: '#/entity-360/search' },
-          { label: `${entity.name} (${entity.id})`, route: `#/entity-360/${entity.id}` },
-          { label: 'Audit History', route: `#/entity-360/${entity.id}/history` }
-        ])}
+      { label: 'Entity 360', route: '#/entity-360/search' },
+      { label: `${entity.name} (${entity.id})`, route: `#/entity-360/${entity.id}` },
+      { label: 'Audit History', route: `#/entity-360/${entity.id}/history` }
+    ])}
       </div>
 
       <div class="page-header">
@@ -4559,19 +4559,19 @@ async function renderEntityHistoryPage(params) {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/governance/lineage.js ====================
-// Page 29 & 30: Data Lineage & Attribute Provenance Flow (Route: /governance/lineage)
-async function renderLineagePage() {
-  return `
+  // ==================== src/pages/governance/lineage.js ====================
+  // Page 29 & 30: Data Lineage & Attribute Provenance Flow (Route: /governance/lineage)
+  async function renderLineagePage() {
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Governance', route: '#/governance/lineage' },
-          { label: 'Data Lineage & Provenance', route: '#/governance/lineage' }
-        ])}
+      { label: 'Governance', route: '#/governance/lineage' },
+      { label: 'Data Lineage & Provenance', route: '#/governance/lineage' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -4689,27 +4689,27 @@ async function renderLineagePage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/governance/audit.js ====================
-// Page 31: Compliance & Governance Audit Trail (Route: /governance/audit)
-async function renderAuditPage() {
-  const events = [
-    { time: 'Today 14:30', user: 'Elena Rostova (Steward)', action: 'Match Approved & Merged', target: 'CRM-10231 ➔ CUST-00192837', ip: '10.240.12.84' },
-    { time: 'Today 10:14', user: 'System (Rule #4)', action: 'Survivorship Recalculated', target: 'CUST-00192837.revenue', ip: 'internal-daemon' },
-    { time: 'Yesterday 18:20', user: 'Manjit Singh (Architect)', action: 'Strategy Published (v4)', target: 'Customer Standard', ip: '10.240.10.12' },
-    { time: 'Yesterday 14:10', user: 'Manjit Singh (Architect)', action: 'Schema Mapping Certified', target: 'Salesforce.Account ➔ Customer', ip: '10.240.10.12' },
-    { time: 'Sep 21 09:30', user: 'Sarah Chen (Admin)', action: 'AI Provider Configured', target: 'Google Cloud Vertex AI (Gemini)', ip: '10.240.0.4' }
-  ];
+  // ==================== src/pages/governance/audit.js ====================
+  // Page 31: Compliance & Governance Audit Trail (Route: /governance/audit)
+  async function renderAuditPage() {
+    const events = [
+      { time: 'Today 14:30', user: 'Elena Rostova (Steward)', action: 'Match Approved & Merged', target: 'CRM-10231 ➔ CUST-00192837', ip: '10.240.12.84' },
+      { time: 'Today 10:14', user: 'System (Rule #4)', action: 'Survivorship Recalculated', target: 'CUST-00192837.revenue', ip: 'internal-daemon' },
+      { time: 'Yesterday 18:20', user: 'John Smith (Architect)', action: 'Strategy Published (v4)', target: 'Customer Standard', ip: '10.240.10.12' },
+      { time: 'Yesterday 14:10', user: 'John Smith (Architect)', action: 'Schema Mapping Certified', target: 'Salesforce.Account ➔ Customer', ip: '10.240.10.12' },
+      { time: 'Sep 21 09:30', user: 'Sarah Chen (Admin)', action: 'AI Provider Configured', target: 'Google Cloud Vertex AI (Gemini)', ip: '10.240.0.4' }
+    ];
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Governance', route: '#/governance/lineage' },
-          { label: 'Audit Trail', route: '#/governance/audit' }
-        ])}
+      { label: 'Governance', route: '#/governance/lineage' },
+      { label: 'Audit Trail', route: '#/governance/audit' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -4749,26 +4749,26 @@ async function renderAuditPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/governance/referenceData.js ====================
-// Page 32: Enterprise Reference Data (Route: /governance/reference-data)
-async function renderReferenceDataPage() {
-  const refTables = [
-    { code: 'REF-ISO-3166', name: 'ISO Country Codes (Alpha-2/3)', version: '2026.1', records: '249', status: 'Active', source: 'ISO Standard' },
-    { code: 'REF-CURRENCY', name: 'ISO 4217 Currency Standards', version: '2026.2', records: '178', status: 'Active', source: 'Financial Consortium' },
-    { code: 'REF-NAICS', name: 'NAICS Industry Classifications', version: '2022.v4', records: '1,057', status: 'Active', source: 'US Census Bureau' },
-    { code: 'REF-LEI', name: 'Legal Entity Identifier (GLEIF)', version: 'Daily Delta', records: '2.4M', status: 'Active', source: 'GLEIF Global Feed' }
-  ];
+  // ==================== src/pages/governance/referenceData.js ====================
+  // Page 32: Enterprise Reference Data (Route: /governance/reference-data)
+  async function renderReferenceDataPage() {
+    const refTables = [
+      { code: 'REF-ISO-3166', name: 'ISO Country Codes (Alpha-2/3)', version: '2026.1', records: '249', status: 'Active', source: 'ISO Standard' },
+      { code: 'REF-CURRENCY', name: 'ISO 4217 Currency Standards', version: '2026.2', records: '178', status: 'Active', source: 'Financial Consortium' },
+      { code: 'REF-NAICS', name: 'NAICS Industry Classifications', version: '2022.v4', records: '1,057', status: 'Active', source: 'US Census Bureau' },
+      { code: 'REF-LEI', name: 'Legal Entity Identifier (GLEIF)', version: 'Daily Delta', records: '2.4M', status: 'Active', source: 'GLEIF Global Feed' }
+    ];
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Governance', route: '#/governance/lineage' },
-          { label: 'Reference Data', route: '#/governance/reference-data' }
-        ])}
+      { label: 'Governance', route: '#/governance/lineage' },
+      { label: 'Reference Data', route: '#/governance/reference-data' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -4810,26 +4810,26 @@ async function renderReferenceDataPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/activation/activationOverview.js ====================
-// Page 33 & 34: Activation APIs & Data Products Hub (Route: /activation & /activation/apis)
-async function renderActivationPage() {
-  const apis = [
-    { name: 'Entity Resolution API', endpoint: 'POST /v1/resolve', status: 'Healthy', requests: '1.4M / day', latency: '38ms', auth: 'mTLS + OAuth 2.0' },
-    { name: 'Golden Entity Lookup API', endpoint: 'GET /v1/entities/:goldenId', status: 'Healthy', requests: '4.8M / day', latency: '12ms', auth: 'Bearer API Key' },
-    { name: 'Identity Graph Traversal API', endpoint: 'POST /v1/graph/traverse', status: 'Healthy', requests: '820K / day', latency: '45ms', auth: 'OAuth 2.0' },
-    { name: 'Governance Lineage API', endpoint: 'GET /v1/lineage/:entityId', status: 'Healthy', requests: '120K / day', latency: '60ms', auth: 'Role: Auditor' }
-  ];
+  // ==================== src/pages/activation/activationOverview.js ====================
+  // Page 33 & 34: Activation APIs & Data Products Hub (Route: /activation & /activation/apis)
+  async function renderActivationPage() {
+    const apis = [
+      { name: 'Entity Resolution API', endpoint: 'POST /v1/resolve', status: 'Healthy', requests: '1.4M / day', latency: '38ms', auth: 'mTLS + OAuth 2.0' },
+      { name: 'Golden Entity Lookup API', endpoint: 'GET /v1/entities/:goldenId', status: 'Healthy', requests: '4.8M / day', latency: '12ms', auth: 'Bearer API Key' },
+      { name: 'Identity Graph Traversal API', endpoint: 'POST /v1/graph/traverse', status: 'Healthy', requests: '820K / day', latency: '45ms', auth: 'OAuth 2.0' },
+      { name: 'Governance Lineage API', endpoint: 'GET /v1/lineage/:entityId', status: 'Healthy', requests: '120K / day', latency: '60ms', auth: 'Role: Auditor' }
+    ];
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Activation', route: '#/activation' },
-          { label: 'APIs & Data Services', route: '#/activation/apis' }
-        ])}
+      { label: 'Activation', route: '#/activation' },
+      { label: 'APIs & Data Services', route: '#/activation/apis' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -4911,28 +4911,28 @@ async function renderActivationPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/activation/events.js ====================
-// Page 35: Event Streams & Webhooks (Route: /activation/events)
-async function renderEventsPage() {
-  const eventTypes = [
-    { type: 'ENTITY_CREATED', topic: 'unify.entities.created', volume: '12.4K / hr', desc: 'Triggered when a new golden identity anchor is established.' },
-    { type: 'ENTITY_UPDATED', topic: 'unify.entities.updated', volume: '184.2K / hr', desc: 'Triggered upon survivorship change or attribute enrichment.' },
-    { type: 'ENTITY_MERGED', topic: 'unify.entities.merged', volume: '4.8K / hr', desc: 'Emitted when two distinct records are combined into one Golden ID.' },
-    { type: 'ENTITY_UNMERGED', topic: 'unify.entities.unmerged', volume: '12 / hr', desc: 'Emitted when a steward separates an erroneously linked pair.' },
-    { type: 'ATTRIBUTE_CHANGED', topic: 'unify.attributes.changed', volume: '210.0K / hr', desc: 'Granular delta event for single field provenance changes.' },
-    { type: 'MATCH_REVIEW_REQUIRED', topic: 'unify.reviews.pending', volume: '213 / hr', desc: 'Alerts steward subscribers when an ambiguous pair enters the queue.' }
-  ];
+  // ==================== src/pages/activation/events.js ====================
+  // Page 35: Event Streams & Webhooks (Route: /activation/events)
+  async function renderEventsPage() {
+    const eventTypes = [
+      { type: 'ENTITY_CREATED', topic: 'unify.entities.created', volume: '12.4K / hr', desc: 'Triggered when a new golden identity anchor is established.' },
+      { type: 'ENTITY_UPDATED', topic: 'unify.entities.updated', volume: '184.2K / hr', desc: 'Triggered upon survivorship change or attribute enrichment.' },
+      { type: 'ENTITY_MERGED', topic: 'unify.entities.merged', volume: '4.8K / hr', desc: 'Emitted when two distinct records are combined into one Golden ID.' },
+      { type: 'ENTITY_UNMERGED', topic: 'unify.entities.unmerged', volume: '12 / hr', desc: 'Emitted when a steward separates an erroneously linked pair.' },
+      { type: 'ATTRIBUTE_CHANGED', topic: 'unify.attributes.changed', volume: '210.0K / hr', desc: 'Granular delta event for single field provenance changes.' },
+      { type: 'MATCH_REVIEW_REQUIRED', topic: 'unify.reviews.pending', volume: '213 / hr', desc: 'Alerts steward subscribers when an ambiguous pair enters the queue.' }
+    ];
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Activation', route: '#/activation' },
-          { label: 'Event Streams', route: '#/activation/events' }
-        ])}
+      { label: 'Activation', route: '#/activation' },
+      { label: 'Event Streams', route: '#/activation/events' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -4972,26 +4972,26 @@ async function renderEventsPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/activation/dataProducts.js ====================
-// Page 36: Certified Golden Data Products (Route: /activation/data-products)
-async function renderDataProductsPage() {
-  const products = [
-    { title: 'Golden Customer 360', domain: 'Customer', owner: 'MDM Governance Team', consumers: '24 Applications', freshness: 'Real-time (CDC)', quality: '97.4%', records: '18.2M', cert: 'Certified Gold' },
-    { title: 'Enterprise Corporate Hierarchy', domain: 'Account', owner: 'Enterprise Architecture', consumers: '12 Applications', freshness: '15 min SLA', quality: '98.1%', records: '4.2M', cert: 'Certified Gold' },
-    { title: 'Unified Product Master', domain: 'Product', owner: 'Commercial Catalog Ops', consumers: '8 Applications', freshness: 'Hourly Batch', quality: '94.0%', records: '482K', cert: 'Silver' },
-    { title: 'Supplier Risk & Sanctions View', domain: 'Supplier', owner: 'Procurement Compliance', consumers: '6 Applications', freshness: 'Daily Delta', quality: '99.0%', records: '64K', cert: 'Certified Gold' }
-  ];
+  // ==================== src/pages/activation/dataProducts.js ====================
+  // Page 36: Certified Golden Data Products (Route: /activation/data-products)
+  async function renderDataProductsPage() {
+    const products = [
+      { title: 'Golden Customer 360', domain: 'Customer', owner: 'MDM Governance Team', consumers: '24 Applications', freshness: 'Real-time (CDC)', quality: '97.4%', records: '18.2M', cert: 'Certified Gold' },
+      { title: 'Enterprise Corporate Hierarchy', domain: 'Account', owner: 'Enterprise Architecture', consumers: '12 Applications', freshness: '15 min SLA', quality: '98.1%', records: '4.2M', cert: 'Certified Gold' },
+      { title: 'Unified Product Master', domain: 'Product', owner: 'Commercial Catalog Ops', consumers: '8 Applications', freshness: 'Hourly Batch', quality: '94.0%', records: '482K', cert: 'Silver' },
+      { title: 'Supplier Risk & Sanctions View', domain: 'Supplier', owner: 'Procurement Compliance', consumers: '6 Applications', freshness: 'Daily Delta', quality: '99.0%', records: '64K', cert: 'Certified Gold' }
+    ];
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Activation', route: '#/activation' },
-          { label: 'Data Products', route: '#/activation/data-products' }
-        ])}
+      { label: 'Activation', route: '#/activation' },
+      { label: 'Data Products', route: '#/activation/data-products' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -5041,26 +5041,26 @@ async function renderDataProductsPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/activation/destinations.js ====================
-// Page 37: Activation Destinations (Route: /activation/destinations)
-async function renderDestinationsPage() {
-  const destinations = [
-    { name: 'Snowflake Enterprise Warehouse', type: 'Data Warehouse', protocol: 'Zero-Copy Data Share', sync: 'Continuous', status: 'Healthy', records: '18.2M' },
-    { name: 'Salesforce Reverse ETL Sync', type: 'CRM', protocol: 'Salesforce Bulk API 2.0', sync: 'Hourly Delta', status: 'Healthy', records: '2.0M' },
-    { name: 'Braze Customer Engagement', type: 'Marketing Automation', protocol: 'REST Webhook', sync: 'Real-time Event', status: 'Healthy', records: '4.8M' },
-    { name: 'Apache Kafka Event Hub', type: 'Event Bus', protocol: 'TLS SASL Kafka Producer', sync: 'Streaming CDC', status: 'Healthy', records: '24.6M' }
-  ];
+  // ==================== src/pages/activation/destinations.js ====================
+  // Page 37: Activation Destinations (Route: /activation/destinations)
+  async function renderDestinationsPage() {
+    const destinations = [
+      { name: 'Snowflake Enterprise Warehouse', type: 'Data Warehouse', protocol: 'Zero-Copy Data Share', sync: 'Continuous', status: 'Healthy', records: '18.2M' },
+      { name: 'Salesforce Reverse ETL Sync', type: 'CRM', protocol: 'Salesforce Bulk API 2.0', sync: 'Hourly Delta', status: 'Healthy', records: '2.0M' },
+      { name: 'Braze Customer Engagement', type: 'Marketing Automation', protocol: 'REST Webhook', sync: 'Real-time Event', status: 'Healthy', records: '4.8M' },
+      { name: 'Apache Kafka Event Hub', type: 'Event Bus', protocol: 'TLS SASL Kafka Producer', sync: 'Streaming CDC', status: 'Healthy', records: '24.6M' }
+    ];
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Activation', route: '#/activation' },
-          { label: 'Destinations', route: '#/activation/destinations' }
-        ])}
+      { label: 'Activation', route: '#/activation' },
+      { label: 'Destinations', route: '#/activation/destinations' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -5098,21 +5098,21 @@ async function renderDestinationsPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/operations/jobs.js ====================
-// Page 38: Operations Jobs Registry (Route: /operations/jobs)
-async function renderJobsPage() {
-  const jobs = await repository.getJobs();
+  // ==================== src/pages/operations/jobs.js ====================
+  // Page 38: Operations Jobs Registry (Route: /operations/jobs)
+  async function renderJobsPage() {
+    const jobs = await repository.getJobs();
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Operations', route: '#/operations/jobs' },
-          { label: 'Jobs Engine', route: '#/operations/jobs' }
-        ])}
+      { label: 'Operations', route: '#/operations/jobs' },
+      { label: 'Jobs Engine', route: '#/operations/jobs' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -5187,33 +5187,33 @@ async function renderJobsPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/operations/jobDetails.js ====================
-// Page 39: Job Details & Pipeline Stage Monitor (Route: /operations/jobs/:jobId)
-async function renderJobDetailsPage(params) {
-  const jobId = params.jobId || 'job-9820';
-  const job = (await repository.getJob(jobId)) || (await repository.getJobs())[1];
+  // ==================== src/pages/operations/jobDetails.js ====================
+  // Page 39: Job Details & Pipeline Stage Monitor (Route: /operations/jobs/:jobId)
+  async function renderJobDetailsPage(params) {
+    const jobId = params.jobId || 'job-9820';
+    const job = (await repository.getJob(jobId)) || (await repository.getJobs())[1];
 
-  const stages = [
-    { name: 'Discovery', status: 'Completed', icon: '✓', color: '#34d399', desc: 'Discovered schemas & foreign keys' },
-    { name: 'Profiling', status: 'Completed', icon: '✓', color: '#34d399', desc: 'Calculated completeness & null distributions' },
-    { name: 'Standardization', status: 'Completed', icon: '✓', color: '#34d399', desc: 'Normalized phone numbers to E.164 and ISO country codes' },
-    { name: 'DQ Validation', status: 'Completed', icon: '✓', color: '#34d399', desc: 'Executed 4 active data quality rules' },
-    { name: 'Matching Engine', status: 'Completed', icon: '✓', color: '#34d399', desc: 'Calculated composite similarity scores via Customer Standard v4' },
-    { name: 'Survivorship', status: 'Running', icon: '●', color: '#6366f1', desc: 'Resolving winning attribute source hierarchy', active: true },
-    { name: 'Publish & Index', status: 'Queued', icon: '○', color: '#64748b', desc: 'Publishing golden records to downstream data product API' }
-  ];
+    const stages = [
+      { name: 'Discovery', status: 'Completed', icon: '✓', color: '#34d399', desc: 'Discovered schemas & foreign keys' },
+      { name: 'Profiling', status: 'Completed', icon: '✓', color: '#34d399', desc: 'Calculated completeness & null distributions' },
+      { name: 'Standardization', status: 'Completed', icon: '✓', color: '#34d399', desc: 'Normalized phone numbers to E.164 and ISO country codes' },
+      { name: 'DQ Validation', status: 'Completed', icon: '✓', color: '#34d399', desc: 'Executed 4 active data quality rules' },
+      { name: 'Matching Engine', status: 'Completed', icon: '✓', color: '#34d399', desc: 'Calculated composite similarity scores via Customer Standard v4' },
+      { name: 'Survivorship', status: 'Running', icon: '●', color: '#6366f1', desc: 'Resolving winning attribute source hierarchy', active: true },
+      { name: 'Publish & Index', status: 'Queued', icon: '○', color: '#64748b', desc: 'Publishing golden records to downstream data product API' }
+    ];
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Operations', route: '#/operations/jobs' },
-          { label: 'Pipeline Jobs', route: '#/operations/jobs' },
-          { label: `${job.name} (${job.id})`, route: `#/operations/jobs/${job.id}` }
-        ])}
+      { label: 'Operations', route: '#/operations/jobs' },
+      { label: 'Pipeline Jobs', route: '#/operations/jobs' },
+      { label: `${job.name} (${job.id})`, route: `#/operations/jobs/${job.id}` }
+    ])}
       </div>
 
       <div class="page-header">
@@ -5276,27 +5276,27 @@ async function renderJobDetailsPage(params) {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/operations/health.js ====================
-// Page 40: System Infrastructure & Telemetry Health (Route: /operations/health)
-async function renderHealthPage() {
-  const subsystems = [
-    { name: 'Databricks Compute Cluster', type: 'Compute Engine', status: 'Healthy', latency: '48ms', uptime: '99.99%', details: '16 Worker Nodes Active (Zero-Copy Federated Engine)' },
-    { name: 'Enterprise Source Adapters', type: 'Zero-Copy Fabric', status: 'Healthy', latency: '22ms', uptime: '100.0%', details: '4/4 Connectors Live (Salesforce, SAP, Postgres, Databricks)' },
-    { name: 'AI Disambiguation Gateway', type: 'Vertex AI & LLMs', status: 'Healthy', latency: '240ms', uptime: '99.95%', details: 'Google Gemini 1.5 Pro & OpenRouter Active' },
-    { name: 'Event Streaming Fabric', type: 'Kafka EventHub', status: 'Healthy', latency: '8ms', uptime: '100.0%', details: 'Zero lag on CDC topics (14.2k evt/s)' },
-    { name: 'Activation REST / GraphQL API', type: 'Edge Gateway', status: 'Healthy', latency: '14ms', uptime: '99.99%', details: 'P99 Latency 38ms across global POPs' }
-  ];
+  // ==================== src/pages/operations/health.js ====================
+  // Page 40: System Infrastructure & Telemetry Health (Route: /operations/health)
+  async function renderHealthPage() {
+    const subsystems = [
+      { name: 'Databricks Compute Cluster', type: 'Compute Engine', status: 'Healthy', latency: '48ms', uptime: '99.99%', details: '16 Worker Nodes Active (Zero-Copy Federated Engine)' },
+      { name: 'Enterprise Source Adapters', type: 'Zero-Copy Fabric', status: 'Healthy', latency: '22ms', uptime: '100.0%', details: '4/4 Connectors Live (Salesforce, SAP, Postgres, Databricks)' },
+      { name: 'AI Disambiguation Gateway', type: 'Vertex AI & LLMs', status: 'Healthy', latency: '240ms', uptime: '99.95%', details: 'Google Gemini 1.5 Pro & OpenRouter Active' },
+      { name: 'Event Streaming Fabric', type: 'Kafka EventHub', status: 'Healthy', latency: '8ms', uptime: '100.0%', details: 'Zero lag on CDC topics (14.2k evt/s)' },
+      { name: 'Activation REST / GraphQL API', type: 'Edge Gateway', status: 'Healthy', latency: '14ms', uptime: '99.99%', details: 'P99 Latency 38ms across global POPs' }
+    ];
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Operations', route: '#/operations/jobs' },
-          { label: 'System Health', route: '#/operations/health' }
-        ])}
+      { label: 'Operations', route: '#/operations/jobs' },
+      { label: 'System Health', route: '#/operations/health' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -5342,27 +5342,27 @@ async function renderHealthPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/admin/domains.js ====================
-// Page 41: Multi-Domain Management (Route: /admin/domains)
-async function renderDomainsPage() {
-  const domains = [
-    { name: 'Customer', status: 'Configured & Active', entities: 'Customer, Contact, Account', goldenCount: '18.2M', desc: 'Enterprise primary master customer domain. Zero-copy resolution active.' },
-    { name: 'Product', status: 'Planned (Q4)', entities: 'Product, SKU, CatalogItem', goldenCount: '—', desc: 'Global SKU unification and hierarchy aggregation.' },
-    { name: 'Supplier', status: 'Planned', entities: 'Vendor, SupplierSite, Contract', goldenCount: '—', desc: 'Procurement vendor consolidation and sanctions screening.' },
-    { name: 'Location', status: 'Planned', entities: 'Facility, Warehouse, Store', goldenCount: '—', desc: 'Geospatial facility master coordinates.' },
-    { name: 'Organization', status: 'Active (B2B)', entities: 'LegalEntity, UltimateParent', goldenCount: '4.2M', desc: 'Corporate hierarchy mapping and D-U-N-S linkage.' }
-  ];
+  // ==================== src/pages/admin/domains.js ====================
+  // Page 41: Multi-Domain Management (Route: /admin/domains)
+  async function renderDomainsPage() {
+    const domains = [
+      { name: 'Customer', status: 'Configured & Active', entities: 'Customer, Contact, Account', goldenCount: '18.2M', desc: 'Enterprise primary master customer domain. Zero-copy resolution active.' },
+      { name: 'Product', status: 'Planned (Q4)', entities: 'Product, SKU, CatalogItem', goldenCount: '—', desc: 'Global SKU unification and hierarchy aggregation.' },
+      { name: 'Supplier', status: 'Planned', entities: 'Vendor, SupplierSite, Contract', goldenCount: '—', desc: 'Procurement vendor consolidation and sanctions screening.' },
+      { name: 'Location', status: 'Planned', entities: 'Facility, Warehouse, Store', goldenCount: '—', desc: 'Geospatial facility master coordinates.' },
+      { name: 'Organization', status: 'Active (B2B)', entities: 'LegalEntity, UltimateParent', goldenCount: '4.2M', desc: 'Corporate hierarchy mapping and D-U-N-S linkage.' }
+    ];
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Administration', route: '#/admin/domains' },
-          { label: 'Master Domains', route: '#/admin/domains' }
-        ])}
+      { label: 'Administration', route: '#/admin/domains' },
+      { label: 'Master Domains', route: '#/admin/domains' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -5406,19 +5406,19 @@ async function renderDomainsPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/admin/entityModels.js ====================
-// Page 42: Canonical Entity Models (Route: /admin/entity-models)
-async function renderEntityModelsPage() {
-  return `
+  // ==================== src/pages/admin/entityModels.js ====================
+  // Page 42: Canonical Entity Models (Route: /admin/entity-models)
+  async function renderEntityModelsPage() {
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Administration', route: '#/admin/domains' },
-          { label: 'Canonical Entity Models', route: '#/admin/entity-models' }
-        ])}
+      { label: 'Administration', route: '#/admin/domains' },
+      { label: 'Canonical Entity Models', route: '#/admin/entity-models' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -5442,21 +5442,21 @@ async function renderEntityModelsPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/admin/users.js ====================
-// Page 43: Users & Role-Based Access Control (Route: /admin/users)
-async function renderUsersPage() {
-  const users = await repository.getUsers();
+  // ==================== src/pages/admin/users.js ====================
+  // Page 43: Users & Role-Based Access Control (Route: /admin/users)
+  async function renderUsersPage() {
+    const users = await repository.getUsers();
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Administration', route: '#/admin/domains' },
-          { label: 'Users & Roles', route: '#/admin/users' }
-        ])}
+      { label: 'Administration', route: '#/admin/domains' },
+      { label: 'Users & Roles', route: '#/admin/users' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -5500,21 +5500,21 @@ async function renderUsersPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/admin/aiProviders.js ====================
-// Page 44: AI Providers & Foundation Models (Route: /admin/ai-providers)
-async function renderAiProvidersPage() {
-  const providers = await repository.getAIProviders();
+  // ==================== src/pages/admin/aiProviders.js ====================
+  // Page 44: AI Providers & Foundation Models (Route: /admin/ai-providers)
+  async function renderAiProvidersPage() {
+    const providers = await repository.getAIProviders();
 
-  return `
+    return `
     <div class="page-container">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Administration', route: '#/admin/domains' },
-          { label: 'AI Providers & LLMs', route: '#/admin/ai-providers' }
-        ])}
+      { label: 'Administration', route: '#/admin/domains' },
+      { label: 'AI Providers & LLMs', route: '#/admin/ai-providers' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -5562,19 +5562,19 @@ async function renderAiProvidersPage() {
       </div>
     </div>
   `;
-}
+  }
 
 
-// ==================== src/pages/admin/settings.js ====================
-// Page 45: Platform Settings & Retention (Route: /admin/settings)
-async function renderSettingsPage() {
-  return `
+  // ==================== src/pages/admin/settings.js ====================
+  // Page 45: Platform Settings & Retention (Route: /admin/settings)
+  async function renderSettingsPage() {
+    return `
     <div class="page-container" style="max-width: 850px; margin: 0 auto;">
       <div style="margin-bottom: 12px;">
         ${renderBreadcrumbs([
-          { label: 'Administration', route: '#/admin/domains' },
-          { label: 'Platform Settings', route: '#/admin/settings' }
-        ])}
+      { label: 'Administration', route: '#/admin/domains' },
+      { label: 'Platform Settings', route: '#/admin/settings' }
+    ])}
       </div>
 
       <div class="page-header">
@@ -5628,189 +5628,189 @@ async function renderSettingsPage() {
       </div>
     </div>
   `;
-}
-
-
-// ==================== src/main.js ====================
-// Main Application Bootstrap for Unify AI Fabric
-
-
-
-
-
-
-
-
-
-// Import All Page Renderers
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Authentication Pages (Section 2.1)
-
-
-
-
-// Setup Global Route Map (Section 50)
-router
-  .addRoute('/login', renderLoginPage)
-  .addRoute('/register', renderRegisterPage)
-  .addRoute('/forgot-password', renderForgotPasswordPage)
-  .addRoute('/', renderOverviewPage)
-  // Data Foundation
-  .addRoute('/data-foundation/sources', renderSourcesPage)
-  .addRoute('/data-foundation/sources/new', renderAddSourcePage)
-  .addRoute('/data-foundation/sources/:sourceId', renderSourceDetailsPage)
-  .addRoute('/data-foundation/discovery', renderDiscoveryPage)
-  .addRoute('/data-foundation/mappings', renderMappingPage)
-  .addRoute('/data-foundation/profiles', renderProfilesPage)
-  // Data Quality
-  .addRoute('/data-quality', renderDqOverviewPage)
-  .addRoute('/data-quality/rules', renderDqRulesPage)
-  .addRoute('/data-quality/rules/new', renderDqDesignerPage)
-  .addRoute('/data-quality/issues', renderDqIssuesPage)
-  // Unification
-  .addRoute('/unification', renderUnifOverviewPage)
-  .addRoute('/unification/match-strategies', renderMatchStrategiesPage)
-  .addRoute('/unification/match-strategies/new', renderStrategyDesignerPage)
-  .addRoute('/unification/simulations/:simulationId', renderSimulationPage)
-  .addRoute('/unification/matches', renderMatchResultsPage)
-  .addRoute('/unification/golden-entities', renderGoldenEntitiesPage)
-  // Stewardship
-  .addRoute('/stewardship', renderReviewQueuePage)
-  .addRoute('/stewardship/reviews/:matchId', renderMatchReviewPage)
-  .addRoute('/stewardship/decisions', renderAuditPage)
-  // Entity 360
-  .addRoute('/entity-360/search', renderEntitySearchPage)
-  .addRoute('/entity-360/:entityId', renderEntityProfilePage)
-  .addRoute('/entity-360/:entityId/graph', renderIdentityGraphPage)
-  .addRoute('/entity-360/:entityId/history', renderEntityHistoryPage)
-  // Governance
-  .addRoute('/governance/lineage', renderLineagePage)
-  .addRoute('/governance/lineage/:entityId/:attribute', renderLineagePage)
-  .addRoute('/governance/audit', renderAuditPage)
-  .addRoute('/governance/reference-data', renderReferenceDataPage)
-  .addRoute('/governance/policies', renderDqRulesPage)
-  // Activation
-  .addRoute('/activation', renderActivationPage)
-  .addRoute('/activation/apis', renderActivationPage)
-  .addRoute('/activation/events', renderEventsPage)
-  .addRoute('/activation/data-products', renderDataProductsPage)
-  .addRoute('/activation/destinations', renderDestinationsPage)
-  // Operations
-  .addRoute('/operations/jobs', renderJobsPage)
-  .addRoute('/operations/jobs/:jobId', renderJobDetailsPage)
-  .addRoute('/operations/health', renderHealthPage)
-  // Administration
-  .addRoute('/admin/domains', renderDomainsPage)
-  .addRoute('/admin/entity-models', renderEntityModelsPage)
-  .addRoute('/admin/users', renderUsersPage)
-  .addRoute('/admin/ai-providers', renderAiProvidersPage)
-  .addRoute('/admin/settings', renderSettingsPage);
-
-// Global Interactivity Bindings
-window.unifyToggleMobileSidebar = (forceState) => {
-  const sidebar = document.querySelector('.app-sidebar');
-  const backdrop = document.getElementById('sidebar-backdrop');
-  if (!sidebar) return;
-
-  const isOpen = typeof forceState === 'boolean' ? forceState : !sidebar.classList.contains('mobile-open');
-  if (isOpen) {
-    sidebar.classList.add('mobile-open');
-    if (backdrop) backdrop.classList.add('open');
-  } else {
-    sidebar.classList.remove('mobile-open');
-    if (backdrop) backdrop.classList.remove('open');
   }
-};
 
-window.unifyToggleAiDrawer = (open) => {
-  store.toggleAiDrawer(open);
-};
 
-window.unifyOpenSearch = () => {
-  store.toggleSearch(true);
-  setTimeout(() => {
-    const input = document.getElementById('global-search-input');
-    if (input) {
-      input.focus();
-      input.select();
+  // ==================== src/main.js ====================
+  // Main Application Bootstrap for Unify AI Fabric
+
+
+
+
+
+
+
+
+
+  // Import All Page Renderers
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // Authentication Pages (Section 2.1)
+
+
+
+
+  // Setup Global Route Map (Section 50)
+  router
+    .addRoute('/login', renderLoginPage)
+    .addRoute('/register', renderRegisterPage)
+    .addRoute('/forgot-password', renderForgotPasswordPage)
+    .addRoute('/', renderOverviewPage)
+    // Data Foundation
+    .addRoute('/data-foundation/sources', renderSourcesPage)
+    .addRoute('/data-foundation/sources/new', renderAddSourcePage)
+    .addRoute('/data-foundation/sources/:sourceId', renderSourceDetailsPage)
+    .addRoute('/data-foundation/discovery', renderDiscoveryPage)
+    .addRoute('/data-foundation/mappings', renderMappingPage)
+    .addRoute('/data-foundation/profiles', renderProfilesPage)
+    // Data Quality
+    .addRoute('/data-quality', renderDqOverviewPage)
+    .addRoute('/data-quality/rules', renderDqRulesPage)
+    .addRoute('/data-quality/rules/new', renderDqDesignerPage)
+    .addRoute('/data-quality/issues', renderDqIssuesPage)
+    // Unification
+    .addRoute('/unification', renderUnifOverviewPage)
+    .addRoute('/unification/match-strategies', renderMatchStrategiesPage)
+    .addRoute('/unification/match-strategies/new', renderStrategyDesignerPage)
+    .addRoute('/unification/simulations/:simulationId', renderSimulationPage)
+    .addRoute('/unification/matches', renderMatchResultsPage)
+    .addRoute('/unification/golden-entities', renderGoldenEntitiesPage)
+    // Stewardship
+    .addRoute('/stewardship', renderReviewQueuePage)
+    .addRoute('/stewardship/reviews/:matchId', renderMatchReviewPage)
+    .addRoute('/stewardship/decisions', renderAuditPage)
+    // Entity 360
+    .addRoute('/entity-360/search', renderEntitySearchPage)
+    .addRoute('/entity-360/:entityId', renderEntityProfilePage)
+    .addRoute('/entity-360/:entityId/graph', renderIdentityGraphPage)
+    .addRoute('/entity-360/:entityId/history', renderEntityHistoryPage)
+    // Governance
+    .addRoute('/governance/lineage', renderLineagePage)
+    .addRoute('/governance/lineage/:entityId/:attribute', renderLineagePage)
+    .addRoute('/governance/audit', renderAuditPage)
+    .addRoute('/governance/reference-data', renderReferenceDataPage)
+    .addRoute('/governance/policies', renderDqRulesPage)
+    // Activation
+    .addRoute('/activation', renderActivationPage)
+    .addRoute('/activation/apis', renderActivationPage)
+    .addRoute('/activation/events', renderEventsPage)
+    .addRoute('/activation/data-products', renderDataProductsPage)
+    .addRoute('/activation/destinations', renderDestinationsPage)
+    // Operations
+    .addRoute('/operations/jobs', renderJobsPage)
+    .addRoute('/operations/jobs/:jobId', renderJobDetailsPage)
+    .addRoute('/operations/health', renderHealthPage)
+    // Administration
+    .addRoute('/admin/domains', renderDomainsPage)
+    .addRoute('/admin/entity-models', renderEntityModelsPage)
+    .addRoute('/admin/users', renderUsersPage)
+    .addRoute('/admin/ai-providers', renderAiProvidersPage)
+    .addRoute('/admin/settings', renderSettingsPage);
+
+  // Global Interactivity Bindings
+  window.unifyToggleMobileSidebar = (forceState) => {
+    const sidebar = document.querySelector('.app-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (!sidebar) return;
+
+    const isOpen = typeof forceState === 'boolean' ? forceState : !sidebar.classList.contains('mobile-open');
+    if (isOpen) {
+      sidebar.classList.add('mobile-open');
+      if (backdrop) backdrop.classList.add('open');
+    } else {
+      sidebar.classList.remove('mobile-open');
+      if (backdrop) backdrop.classList.remove('open');
     }
-  }, 50);
-};
+  };
 
-window.unifyCloseSearch = () => {
-  store.toggleSearch(false);
-};
+  window.unifyToggleAiDrawer = (open) => {
+    store.toggleAiDrawer(open);
+  };
 
-window.unifyExecuteSearch = async (val) => {
-  const container = document.getElementById('search-results-container');
-  if (!container) return;
+  window.unifyOpenSearch = () => {
+    store.toggleSearch(true);
+    setTimeout(() => {
+      const input = document.getElementById('global-search-input');
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }, 50);
+  };
 
-  if (!val || val.trim() === '') {
-    container.innerHTML = `
+  window.unifyCloseSearch = () => {
+    store.toggleSearch(false);
+  };
+
+  window.unifyExecuteSearch = async (val) => {
+    const container = document.getElementById('search-results-container');
+    if (!container) return;
+
+    if (!val || val.trim() === '') {
+      container.innerHTML = `
       <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 12.5px;">
         Search for <strong>Robert Smith</strong>, <strong>Salesforce</strong>, <strong>Email Rule</strong>, or <strong>Customer Standard</strong>.
       </div>
     `;
-    return;
-  }
+      return;
+    }
 
-  const results = await repository.searchGlobal(val);
-  if (results.length === 0) {
-    container.innerHTML = `
+    const results = await repository.searchGlobal(val);
+    if (results.length === 0) {
+      container.innerHTML = `
       <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 12.5px;">
         No results found across sources, entities, or rules matching "${val}".
       </div>
     `;
-    return;
-  }
+      return;
+    }
 
-  container.innerHTML = results.map(r => `
+    container.innerHTML = results.map(r => `
     <a href="${r.route}" onclick="window.unifyCloseSearch()" style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 6px; text-decoration: none; color: inherit; transition: background 0.15s; border-bottom: 1px solid var(--border-subtle);" onmouseover="this.style.background='var(--bg-card-hover)'" onmouseout="this.style.background='transparent'">
       <span style="font-size: 18px;">${r.icon}</span>
       <div style="flex: 1;">
@@ -5823,307 +5823,307 @@ window.unifyExecuteSearch = async (val) => {
       <span style="color: var(--primary); font-size: 11px;">Jump ➔</span>
     </a>
   `).join('');
-};
+  };
 
-window.unifySetPersona = (persona) => {
-  store.setPersona(persona);
-};
+  window.unifySetPersona = (persona) => {
+    store.setPersona(persona);
+  };
 
-window.unifyNextJourneyStep = () => {
-  store.nextJourneyStep();
-};
+  window.unifyNextJourneyStep = () => {
+    store.nextJourneyStep();
+  };
 
-window.unifyPrevJourneyStep = () => {
-  store.prevJourneyStep();
-};
+  window.unifyPrevJourneyStep = () => {
+    store.prevJourneyStep();
+  };
 
-window.unifyToggleJourney = (active) => {
-  store.toggleJourney(active);
-};
+  window.unifyToggleJourney = (active) => {
+    store.toggleJourney(active);
+  };
 
-// Wizard helper
-let currentWizardStep = 1;
-window.unifySetWizardStep = (step) => {
-  currentWizardStep = step;
-  for (let i = 1; i <= 7; i++) {
-    const pane = document.getElementById(`step-pane-${i}`);
-    if (pane) pane.style.display = i === step ? 'block' : 'none';
-  }
-
-  document.querySelectorAll('#source-stepper .wizard-step').forEach(el => {
-    const s = parseInt(el.getAttribute('data-step'), 10);
-    el.classList.toggle('active', s === step);
-    el.classList.toggle('completed', s < step);
-  });
-
-  const prevBtn = document.getElementById('wiz-prev-btn');
-  const nextBtn = document.getElementById('wiz-next-btn');
-  if (prevBtn) prevBtn.style.visibility = step === 1 ? 'hidden' : 'visible';
-  if (nextBtn) {
-    if (step === 7) {
-      nextBtn.innerText = 'Activate Connection ✓';
-      nextBtn.onclick = () => {
-        alert('Salesforce CRM successfully connected into zero-copy fabric!');
-        window.location.hash = '#/data-foundation/sources/src-salesforce';
-      };
-    } else {
-      nextBtn.innerText = 'Next Step →';
-      nextBtn.onclick = window.unifyWizNext;
+  // Wizard helper
+  let currentWizardStep = 1;
+  window.unifySetWizardStep = (step) => {
+    currentWizardStep = step;
+    for (let i = 1; i <= 7; i++) {
+      const pane = document.getElementById(`step-pane-${i}`);
+      if (pane) pane.style.display = i === step ? 'block' : 'none';
     }
-  }
-};
 
-window.unifyWizNext = () => {
-  if (currentWizardStep < 7) {
-    window.unifySetWizardStep(currentWizardStep + 1);
-  }
-};
+    document.querySelectorAll('#source-stepper .wizard-step').forEach(el => {
+      const s = parseInt(el.getAttribute('data-step'), 10);
+      el.classList.toggle('active', s === step);
+      el.classList.toggle('completed', s < step);
+    });
 
-window.unifyWizPrev = () => {
-  if (currentWizardStep > 1) {
-    window.unifySetWizardStep(currentWizardStep - 1);
-  }
-};
-
-window.unifySelectSourceType = (type, el) => {
-  document.querySelectorAll('#source-type-selector .source-type-card').forEach(c => {
-    c.style.borderColor = 'var(--border-default)';
-    c.style.background = 'var(--bg-input)';
-  });
-  if (el) {
-    el.style.borderColor = 'var(--primary)';
-    el.style.background = 'rgba(99, 102, 241, 0.1)';
-  }
-};
-
-// Tabs helper
-window.unifySwitchTab = (btn, tabId) => {
-  if (btn && btn.parentElement) {
-    btn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  }
-  document.querySelectorAll('.tab-content-pane').forEach(p => p.style.display = 'none');
-  const target = document.getElementById(tabId);
-  if (target) target.style.display = 'block';
-};
-
-// Schema Mapping Actions
-window.unifyAcceptMapping = async (mapId) => {
-  await repository.updateMappingDecision(mapId, 'USER DECISION');
-  router.handleRouting();
-};
-
-window.unifyResetMapping = async (mapId) => {
-  await repository.updateMappingDecision(mapId, 'AI RECOMMENDATION');
-  router.handleRouting();
-};
-
-window.unifyAcceptAllMappings = async () => {
-  await repository.acceptAllHighConfidence();
-  router.handleRouting();
-};
-
-window.unifyExplainMappingAI = async () => {
-  store.toggleAiDrawer(true);
-  window.unifyAskAiFromPrompt('Explain schema mapping reasoning for Salesforce Account');
-};
-
-window.unifyGenerateRuleAI = () => {
-  const nameInput = document.getElementById('rule-name');
-  const condInput = document.getElementById('rule-condition');
-  if (nameInput) nameInput.value = 'AI Generated: Corporate Tax ID & DUNS Integrity';
-  if (condInput) condInput.value = 'valid_duns(identifiers.duns_number) && length(identifiers.tax_number) >= 9';
-  alert('AI synthesized validation condition from canonical ontology standards.');
-};
-
-window.unifyResolveIssue = async (id, status) => {
-  await repository.resolveDQIssue(id, status);
-  router.handleRouting();
-};
-
-window.unifyRecordMatchDecision = async (matchId, decision) => {
-  await repository.updateMatchDecision(matchId, decision);
-  router.handleRouting();
-};
-
-window.unifyAskAiFromPrompt = async (promptText) => {
-  const input = document.getElementById('ai-input-box');
-  if (input) input.value = promptText;
-  await executeAiQuery(promptText);
-};
-
-window.unifyHandleAiSubmit = async (e) => {
-  e.preventDefault();
-  const input = document.getElementById('ai-input-box');
-  if (!input || !input.value.trim()) return;
-  const q = input.value.trim();
-  input.value = '';
-  await executeAiQuery(q);
-};
-
-async function executeAiQuery(q) {
-  store.addAiMessage({ sender: 'user', text: q });
-
-  const aiResp = await repository.askAI(q);
-  store.addAiMessage({
-    sender: 'assistant',
-    text: aiResp.answer,
-    links: aiResp.links,
-    triadStatus: aiResp.triadStatus
-  });
-
-  const chatBody = document.getElementById('ai-chat-body');
-  if (chatBody) {
-    chatBody.scrollTop = chatBody.scrollHeight;
-  }
-}
-
-// Global Keyboard Shortcut: Ctrl+K / Cmd+K for search, ESC to close
-window.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-    e.preventDefault();
-    const state = store.getState();
-    if (state.isSearchOpen) {
-      window.unifyCloseSearch();
-    } else {
-      window.unifyOpenSearch();
-    }
-  } else if (e.key === 'Escape') {
-    window.unifyCloseSearch();
-    window.unifyToggleAiDrawer(false);
-  }
-});
-
-// Authentication Handlers (Section 2.1)
-window.unifyHandleLogin = (e) => {
-  e.preventDefault();
-  const email = document.getElementById('login-email')?.value || 'manjit@unify.ai';
-  store.login({
-    name: email.split('@')[0].replace('.', ' '),
-    email: email,
-    role: 'Data Architect',
-    tenant: 'Global Enterprise Ltd'
-  });
-  window.location.hash = '#/';
-};
-
-window.unifyQuickLogin = (name, role, email) => {
-  store.login({ name, role, email, tenant: 'Global Enterprise Ltd' });
-  window.location.hash = '#/';
-};
-
-window.unifyLoginSSO = (provider) => {
-  store.login({
-    name: 'Manjit Singh',
-    role: 'Data Architect',
-    email: 'manjit@unify.ai',
-    tenant: `${provider} SSO Verified`
-  });
-  window.location.hash = '#/';
-};
-
-window.unifyLogout = () => {
-  store.logout();
-};
-
-window.unifyHandleRegister = (e) => {
-  e.preventDefault();
-  const name = document.getElementById('reg-name')?.value || 'New User';
-  const email = document.getElementById('reg-email')?.value || 'user@enterprise.com';
-  const role = document.getElementById('reg-role')?.value || 'Data Architect';
-  const org = document.getElementById('reg-org')?.value || 'Enterprise Tenant';
-
-  store.login({ name, email, role, tenant: org });
-  alert(`Enterprise tenant for ${org} provisioned successfully. Welcome, ${name}!`);
-  window.location.hash = '#/';
-};
-
-window.unifyHandleForgot = (e) => {
-  e.preventDefault();
-  const banner = document.getElementById('forgot-success-banner');
-  if (banner) banner.style.display = 'block';
-};
-
-window.unifyUpdatePasswordStrength = (val) => {
-  const bar = document.getElementById('pwd-strength-bar');
-  const text = document.getElementById('pwd-strength-text');
-  if (!bar || !text) return;
-  if (val.length < 6) {
-    bar.style.width = '25%';
-    bar.style.background = '#ef4444';
-    text.style.color = '#ef4444';
-    text.innerText = 'Weak';
-  } else if (val.length < 10) {
-    bar.style.width = '60%';
-    bar.style.background = '#fbbf24';
-    text.style.color = '#fbbf24';
-    text.innerText = 'Medium';
-  } else {
-    bar.style.width = '100%';
-    bar.style.background = '#34d399';
-    text.style.color = '#34d399';
-    text.innerText = 'Strong';
-  }
-};
-
-window.unifyMountShell = () => {
-  const appRoot = document.getElementById('app-root');
-  if (appRoot && !document.getElementById('main-content-viewport')) {
-    appRoot.innerHTML = renderAppShell();
-    const viewport = document.getElementById('main-content-viewport');
-    router.setContainer(viewport);
-  }
-};
-
-// App Initialization
-function initApp() {
-  const appRoot = document.getElementById('app-root');
-  if (!appRoot) return;
-
-  const hash = window.location.hash || '#/';
-  const isAuthRoute = hash === '#/login' || hash === '#/register' || hash === '#/forgot-password';
-
-  if (!isAuthRoute) {
-    window.unifyMountShell();
-  }
-
-  // Subscribe to store updates to keep sidebar, topbar, journey banner in sync
-  store.subscribe((state) => {
-    const sidebarEl = document.getElementById('sidebar-container');
-    if (sidebarEl) sidebarEl.innerHTML = renderSidebar();
-
-    const topbarEl = document.getElementById('topbar-container');
-    if (topbarEl) topbarEl.innerHTML = renderTopbar();
-
-    const searchEl = document.getElementById('search-modal-container');
-    if (searchEl) searchEl.innerHTML = renderGlobalSearch();
-
-    const aiEl = document.getElementById('ai-drawer-container');
-    if (aiEl) aiEl.innerHTML = renderAiAssistant();
-
-    const banner = document.getElementById('journey-banner');
-    const bannerText = document.getElementById('journey-banner-text');
-    if (banner && bannerText) {
-      if (state.isJourneyActive) {
-        banner.style.display = 'flex';
-        const curStep = goldenJourneySteps.find(s => s.id === state.currentJourneyStep) || goldenJourneySteps[0];
-        bannerText.innerHTML = `<strong>Golden Flow Step ${state.currentJourneyStep} of 16:</strong> ${curStep.title} — <em>${curStep.description}</em>`;
+    const prevBtn = document.getElementById('wiz-prev-btn');
+    const nextBtn = document.getElementById('wiz-next-btn');
+    if (prevBtn) prevBtn.style.visibility = step === 1 ? 'hidden' : 'visible';
+    if (nextBtn) {
+      if (step === 7) {
+        nextBtn.innerText = 'Activate Connection ✓';
+        nextBtn.onclick = () => {
+          alert('Salesforce CRM successfully connected into zero-copy fabric!');
+          window.location.hash = '#/data-foundation/sources/src-salesforce';
+        };
       } else {
-        banner.style.display = 'none';
+        nextBtn.innerText = 'Next Step →';
+        nextBtn.onclick = window.unifyWizNext;
       }
     }
+  };
+
+  window.unifyWizNext = () => {
+    if (currentWizardStep < 7) {
+      window.unifySetWizardStep(currentWizardStep + 1);
+    }
+  };
+
+  window.unifyWizPrev = () => {
+    if (currentWizardStep > 1) {
+      window.unifySetWizardStep(currentWizardStep - 1);
+    }
+  };
+
+  window.unifySelectSourceType = (type, el) => {
+    document.querySelectorAll('#source-type-selector .source-type-card').forEach(c => {
+      c.style.borderColor = 'var(--border-default)';
+      c.style.background = 'var(--bg-input)';
+    });
+    if (el) {
+      el.style.borderColor = 'var(--primary)';
+      el.style.background = 'rgba(99, 102, 241, 0.1)';
+    }
+  };
+
+  // Tabs helper
+  window.unifySwitchTab = (btn, tabId) => {
+    if (btn && btn.parentElement) {
+      btn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    document.querySelectorAll('.tab-content-pane').forEach(p => p.style.display = 'none');
+    const target = document.getElementById(tabId);
+    if (target) target.style.display = 'block';
+  };
+
+  // Schema Mapping Actions
+  window.unifyAcceptMapping = async (mapId) => {
+    await repository.updateMappingDecision(mapId, 'USER DECISION');
+    router.handleRouting();
+  };
+
+  window.unifyResetMapping = async (mapId) => {
+    await repository.updateMappingDecision(mapId, 'AI RECOMMENDATION');
+    router.handleRouting();
+  };
+
+  window.unifyAcceptAllMappings = async () => {
+    await repository.acceptAllHighConfidence();
+    router.handleRouting();
+  };
+
+  window.unifyExplainMappingAI = async () => {
+    store.toggleAiDrawer(true);
+    window.unifyAskAiFromPrompt('Explain schema mapping reasoning for Salesforce Account');
+  };
+
+  window.unifyGenerateRuleAI = () => {
+    const nameInput = document.getElementById('rule-name');
+    const condInput = document.getElementById('rule-condition');
+    if (nameInput) nameInput.value = 'AI Generated: Corporate Tax ID & DUNS Integrity';
+    if (condInput) condInput.value = 'valid_duns(identifiers.duns_number) && length(identifiers.tax_number) >= 9';
+    alert('AI synthesized validation condition from canonical ontology standards.');
+  };
+
+  window.unifyResolveIssue = async (id, status) => {
+    await repository.resolveDQIssue(id, status);
+    router.handleRouting();
+  };
+
+  window.unifyRecordMatchDecision = async (matchId, decision) => {
+    await repository.updateMatchDecision(matchId, decision);
+    router.handleRouting();
+  };
+
+  window.unifyAskAiFromPrompt = async (promptText) => {
+    const input = document.getElementById('ai-input-box');
+    if (input) input.value = promptText;
+    await executeAiQuery(promptText);
+  };
+
+  window.unifyHandleAiSubmit = async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('ai-input-box');
+    if (!input || !input.value.trim()) return;
+    const q = input.value.trim();
+    input.value = '';
+    await executeAiQuery(q);
+  };
+
+  async function executeAiQuery(q) {
+    store.addAiMessage({ sender: 'user', text: q });
+
+    const aiResp = await repository.askAI(q);
+    store.addAiMessage({
+      sender: 'assistant',
+      text: aiResp.answer,
+      links: aiResp.links,
+      triadStatus: aiResp.triadStatus
+    });
+
+    const chatBody = document.getElementById('ai-chat-body');
+    if (chatBody) {
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+  }
+
+  // Global Keyboard Shortcut: Ctrl+K / Cmd+K for search, ESC to close
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      const state = store.getState();
+      if (state.isSearchOpen) {
+        window.unifyCloseSearch();
+      } else {
+        window.unifyOpenSearch();
+      }
+    } else if (e.key === 'Escape') {
+      window.unifyCloseSearch();
+      window.unifyToggleAiDrawer(false);
+    }
   });
 
-  // Run initial route handler
-  router.handleRouting();
-}
+  // Authentication Handlers (Section 2.1)
+  window.unifyHandleLogin = (e) => {
+    e.preventDefault();
+    const email = document.getElementById('login-email')?.value || 'John@unify.ai';
+    store.login({
+      name: email.split('@')[0].replace('.', ' '),
+      email: email,
+      role: 'Data Architect',
+      tenant: 'Global Enterprise Ltd'
+    });
+    window.location.hash = '#/';
+  };
 
-// Start when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initApp);
-} else {
-  initApp();
-}
+  window.unifyQuickLogin = (name, role, email) => {
+    store.login({ name, role, email, tenant: 'Global Enterprise Ltd' });
+    window.location.hash = '#/';
+  };
+
+  window.unifyLoginSSO = (provider) => {
+    store.login({
+      name: 'John Smith',
+      role: 'Data Architect',
+      email: 'John@unify.ai',
+      tenant: `${provider} SSO Verified`
+    });
+    window.location.hash = '#/';
+  };
+
+  window.unifyLogout = () => {
+    store.logout();
+  };
+
+  window.unifyHandleRegister = (e) => {
+    e.preventDefault();
+    const name = document.getElementById('reg-name')?.value || 'New User';
+    const email = document.getElementById('reg-email')?.value || 'user@enterprise.com';
+    const role = document.getElementById('reg-role')?.value || 'Data Architect';
+    const org = document.getElementById('reg-org')?.value || 'Enterprise Tenant';
+
+    store.login({ name, email, role, tenant: org });
+    alert(`Enterprise tenant for ${org} provisioned successfully. Welcome, ${name}!`);
+    window.location.hash = '#/';
+  };
+
+  window.unifyHandleForgot = (e) => {
+    e.preventDefault();
+    const banner = document.getElementById('forgot-success-banner');
+    if (banner) banner.style.display = 'block';
+  };
+
+  window.unifyUpdatePasswordStrength = (val) => {
+    const bar = document.getElementById('pwd-strength-bar');
+    const text = document.getElementById('pwd-strength-text');
+    if (!bar || !text) return;
+    if (val.length < 6) {
+      bar.style.width = '25%';
+      bar.style.background = '#ef4444';
+      text.style.color = '#ef4444';
+      text.innerText = 'Weak';
+    } else if (val.length < 10) {
+      bar.style.width = '60%';
+      bar.style.background = '#fbbf24';
+      text.style.color = '#fbbf24';
+      text.innerText = 'Medium';
+    } else {
+      bar.style.width = '100%';
+      bar.style.background = '#34d399';
+      text.style.color = '#34d399';
+      text.innerText = 'Strong';
+    }
+  };
+
+  window.unifyMountShell = () => {
+    const appRoot = document.getElementById('app-root');
+    if (appRoot && !document.getElementById('main-content-viewport')) {
+      appRoot.innerHTML = renderAppShell();
+      const viewport = document.getElementById('main-content-viewport');
+      router.setContainer(viewport);
+    }
+  };
+
+  // App Initialization
+  function initApp() {
+    const appRoot = document.getElementById('app-root');
+    if (!appRoot) return;
+
+    const hash = window.location.hash || '#/';
+    const isAuthRoute = hash === '#/login' || hash === '#/register' || hash === '#/forgot-password';
+
+    if (!isAuthRoute) {
+      window.unifyMountShell();
+    }
+
+    // Subscribe to store updates to keep sidebar, topbar, journey banner in sync
+    store.subscribe((state) => {
+      const sidebarEl = document.getElementById('sidebar-container');
+      if (sidebarEl) sidebarEl.innerHTML = renderSidebar();
+
+      const topbarEl = document.getElementById('topbar-container');
+      if (topbarEl) topbarEl.innerHTML = renderTopbar();
+
+      const searchEl = document.getElementById('search-modal-container');
+      if (searchEl) searchEl.innerHTML = renderGlobalSearch();
+
+      const aiEl = document.getElementById('ai-drawer-container');
+      if (aiEl) aiEl.innerHTML = renderAiAssistant();
+
+      const banner = document.getElementById('journey-banner');
+      const bannerText = document.getElementById('journey-banner-text');
+      if (banner && bannerText) {
+        if (state.isJourneyActive) {
+          banner.style.display = 'flex';
+          const curStep = goldenJourneySteps.find(s => s.id === state.currentJourneyStep) || goldenJourneySteps[0];
+          bannerText.innerHTML = `<strong>Golden Flow Step ${state.currentJourneyStep} of 16:</strong> ${curStep.title} — <em>${curStep.description}</em>`;
+        } else {
+          banner.style.display = 'none';
+        }
+      }
+    });
+
+    // Run initial route handler
+    router.handleRouting();
+  }
+
+  // Start when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+  } else {
+    initApp();
+  }
 
 
 })();

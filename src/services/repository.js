@@ -73,7 +73,7 @@ class DataRepository {
     return map;
   }
 
-  async acceptAllHighConfidence(user = 'Manjit (Data Architect)') {
+  async acceptAllHighConfidence(user = 'John (Data Architect)') {
     this.mappings.forEach(m => {
       if (m.confidence >= 95) {
         m.triadStatus = 'USER DECISION';

@@ -1799,7 +1799,7 @@ After acceptance:
 
 ```text
 USER DECISION
-Mapping approved by Manjit
+Mapping approved by John
 ```
 
 For matching:

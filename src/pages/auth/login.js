@@ -23,7 +23,7 @@ export async function renderLoginPage() {
         <form onsubmit="window.unifyHandleLogin(event)" style="display: flex; flex-direction: column; gap: 14px;">
           <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label" style="font-size: 12px;">Corporate Work Email</label>
-            <input type="email" id="login-email" class="form-input" placeholder="name@enterprise.com" value="manjit@unify.ai" required style="padding: 10px 12px; font-size: 13px;">
+            <input type="email" id="login-email" class="form-input" placeholder="name@enterprise.com" value="John@unify.ai" required style="padding: 10px 12px; font-size: 13px;">
           </div>
 
           <div class="form-group" style="margin-bottom: 0;">
@@ -72,7 +72,7 @@ export async function renderLoginPage() {
             ✦ Demo Fast-Sign-In Presets
           </div>
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
-            <button class="btn btn-ghost btn-sm" onclick="window.unifyQuickLogin('Manjit Singh', 'Data Architect', 'manjit@unify.ai')" style="font-size: 11px; padding: 4px; justify-content: flex-start; text-align: left;">
+            <button class="btn btn-ghost btn-sm" onclick="window.unifyQuickLogin('John Smith', 'Data Architect', 'John@unify.ai')" style="font-size: 11px; padding: 4px; justify-content: flex-start; text-align: left;">
               👤 Data Architect
             </button>
             <button class="btn btn-ghost btn-sm" onclick="window.unifyQuickLogin('Elena Rostova', 'Data Steward', 'elena@unify.ai')" style="font-size: 11px; padding: 4px; justify-content: flex-start; text-align: left;">

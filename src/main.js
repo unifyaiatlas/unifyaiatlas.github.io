@@ -363,7 +363,7 @@ window.addEventListener('keydown', (e) => {
 // Authentication Handlers (Section 2.1)
 window.unifyHandleLogin = (e) => {
   e.preventDefault();
-  const email = document.getElementById('login-email')?.value || 'manjit@unify.ai';
+  const email = document.getElementById('login-email')?.value || 'John@unify.ai';
   store.login({
     name: email.split('@')[0].replace('.', ' '),
     email: email,
@@ -380,9 +380,9 @@ window.unifyQuickLogin = (name, role, email) => {
 
 window.unifyLoginSSO = (provider) => {
   store.login({
-    name: 'Manjit Singh',
+    name: 'John Smith',
     role: 'Data Architect',
-    email: 'manjit@unify.ai',
+    email: 'John@unify.ai',
     tenant: `${provider} SSO Verified`
   });
   window.location.hash = '#/';

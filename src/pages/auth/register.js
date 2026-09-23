@@ -24,7 +24,7 @@ export async function renderRegisterPage() {
           <div class="grid-2">
             <div class="form-group" style="margin-bottom: 0;">
               <label class="form-label" style="font-size: 12px;">Full Legal Name</label>
-              <input type="text" id="reg-name" class="form-input" placeholder="Manjit Singh" required style="padding: 9px 12px; font-size: 12.5px;">
+              <input type="text" id="reg-name" class="form-input" placeholder="John Smith" required style="padding: 9px 12px; font-size: 12.5px;">
             </div>
             <div class="form-group" style="margin-bottom: 0;">
               <label class="form-label" style="font-size: 12px;">Corporate Work Email</label>
