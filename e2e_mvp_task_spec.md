@@ -143,11 +143,17 @@ unify-ai/
   - *Deliverable:* Seed runner script `pnpm run seed:lakebase`.
 
 - [ ] **TASK-2.4: Low-Latency Operational Cache & Delta Write-Through Synchronizer**
-  - Implement dual-tier metastore architecture (`packages/@unify/operational-cache`):
-    - Sub-5ms in-memory/transactional cache (Redis / PostgreSQL) serving frequent UI read queries and dropdown configs.
-    - Distributed lock manager preventing concurrent Data Steward merge collisions and eliminating Delta `ConcurrentModificationException`.
-    - Asynchronous write-through worker that flushes audited changes, layer state transitions, and canonical schema updates to `system.unify_lakebase` Delta tables with exponential backoff.
-  - *Deliverable:* Benchmarked < 5ms read latency and zero transaction conflict exceptions under simulated 50-steward concurrency.
+  - **Architectural Rationale: Why Lakebase Alone Cannot Serve the Operational Path:**
+    - *OLAP Query Latency:* Databricks Serverless SQL Execution REST API queries require 200ms–2,000ms+ (statement dispatch, execution, and polling), which violates sub-5ms interactive UI requirements.
+    - *Delta OCC Write Collisions:* Delta Lake commits optimistically at the table/file level. Concurrent writes (`MERGE`/`INSERT`) from parallel data stewards or microservice replicas throw `ConcurrentModificationException`.
+    - *Distributed Locking Absence:* Delta Lake has no sub-second leasing or distributed lock primitive with fencing tokens to coordinate active data steward merge sessions or serialize writes across instances.
+    - *Compute Cost & Churn:* Repetitive operational reads and polling loops burn expensive Serverless DBUs.
+  - **Dual-Tier Metastore Implementation (`packages/@unify/operational-cache`):**
+    - Sub-5ms in-memory/transactional cache (`cache_entries` in PostgreSQL/Redis) serving frequent UI read queries, entity definitions, and dropdown configs.
+    - Distributed lock manager (`LockManager` with monotonic `lock_fencing_seq`) preventing concurrent Data Steward merge collisions on `golden_record:<id>` and eliminating Delta `ConcurrentModificationException`.
+    - Transactional Unit-of-Work (`OperationalStore.transaction`) committing cache updates and outbox events in a single ACID transaction, preventing cache-Delta divergence.
+    - Asynchronous single-writer worker (`OutboxWorker` with leader election) that flushes audited changes, layer state transitions, and canonical schema updates to `<catalog>.unify_lakebase` Delta tables in strict FIFO head-of-line order with exponential backoff, preserving SHA-256 audit hash chains.
+  - *Deliverable:* Benchmarked < 5ms read latency and zero transaction conflict exceptions under simulated 50-steward concurrency (`pnpm run bench:cache` and `pnpm run test:integration:cache`).
 
 ---
 

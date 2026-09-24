@@ -374,34 +374,98 @@ export interface ZeroCopyQueryPlan {
 ```
 
 ________________________________________
-9. Databricks Lakebase Active Metastore + Hybrid Operational Cache
+9. Databricks Lakebase Active Metastore + Dual-Tier Operational Architecture
 
-Unify AI couples **Databricks Lakebase** (`system.unify_lakebase` Delta tables in Unity Catalog) with a **Low-Latency Operational Cache** (PostgreSQL / Redis):
+### 9.1 The Architectural Dilemma: Can Lakebase (Delta Lake in Unity Catalog) Alone Be Used for the Operational Control Plane?
 
+A critical architectural inquiry is whether **Lakebase** (`system.unify_lakebase` Delta tables within Databricks Unity Catalog) can be used directly as the sole operational storage layer for Unify AI's control plane and web application.
+
+While Delta Lake provides enterprise ACID guarantees, immutable governance, time-travel history (`VERSION AS OF`), Change Data Feed (CDF), and native Spark/SQL engine integration, relying on Lakebase alone on the hot operational path creates fundamental operational mismatches:
+
+| Architectural Dimension | Lakebase Alone (Databricks Serverless SQL Execution API) | Operational UI & Real-Time Control Path Requirements |
+| :--- | :--- | :--- |
+| **Query Latency Profile** | **200ms – 2,000ms+ (OLAP)**<br>Each query dispatched via the Databricks SQL Execution REST API requires network transit, statement lifecycle state polling (`PENDING` &rarr; `RUNNING` &rarr; `SUCCEEDED`), and analytical warehouse query processing. | **< 5ms (OLTP / In-Memory)**<br>Interactive web UI workflows (entity search auto-complete, dropdown filters, schema browsing, and rapid configuration updates) demand sub-5ms response times. |
+| **Concurrency & Write Conflicts** | **Optimistic Concurrency Control (OCC) Collisions**<br>Delta Lake resolves concurrent commits optimistically at the table/file level. Concurrent writes (`MERGE` or `INSERT`) from parallel data stewards or multiple microservice instances trigger `ConcurrentModificationException`. | **High Concurrent Steward Write Throughput**<br>Dozens of data stewards reviewing match queues and modifying canonical attributes concurrently must not suffer transaction aborts, dropped reviews, or cascading rollbacks. |
+| **Distributed Locking & Fencing** | **No Native Distributed Leases**<br>Delta tables do not provide lightweight, sub-second distributed mutexes, lease heartbeats, or monotonic fencing tokens required to coordinate active sessions. | **Distributed Leases with Fencing Tokens**<br>Essential for preventing dual-steward merge conflicts (`golden_record:<id>`), serializing metastore writes across instances, and electing single-writer background sync workers. |
+| **Compute Cost & Warehouse Churn** | **Continuous Serverless DBU Consumption**<br>Firing Databricks SQL queries for repetitive UI dropdown lookups, metadata polling loops, and micro-transactions incurs significant Serverless DBU costs and risks hitting workspace rate limits. | **Zero DBU Cost for Operational Reads**<br>Sub-millisecond reads are served locally from indexed cache without consuming Databricks SQL warehouse compute. |
+
+---
+
+### 9.2 The Solution: Dual-Tier Metastore Architecture (TASK-2.4)
+
+To resolve this bottleneck, Unify AI implements a **Dual-Tier Control-Plane Metastore** (`packages/@unify/operational-cache`). This pairs a high-performance in-memory/transactional operational store (PostgreSQL / Redis) with Databricks Lakebase through an asynchronous write-through synchronizer:
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                   DUAL-TIER CONTROL-PLANE METASTORE ARCHITECTURE                 │
+├──────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│   [ Data Stewards / Web UI ]          [ Microservices / API Gateway ]            │
+│                 │                                   │                            │
+│                 ▼                                   ▼                            │
+│   ────────────────────────────────────────────────────────────────────────────   │
+│   TIER 1: LOW-LATENCY OPERATIONAL STORE (@unify/operational-cache)               │
+│   ────────────────────────────────────────────────────────────────────────────   │
+│   • Sub-5ms Operational Reads:                                                   │
+│     - cache_entries: Indexed JSON documents by (namespace, key)                  │
+│     - High-speed point lookups for UI dropdowns, entity models, and layer states  │
+│                                                                                  │
+│   • Distributed Lease Manager (LockManager):                                     │
+│     - DB-clock backed leases preventing cross-host clock skew                    │
+│     - Monotonic fencing tokens (lock_fencing_seq) eliminating steward collisions │
+│     - Mutex key: golden_record:<id> prevents dual-steward merge conflicts        │
+│                                                                                  │
+│   • Transactional Unit-of-Work Outbox:                                           │
+│     - Atomic commit: cache update + outbox event in ONE ACID transaction         │
+│     - Eliminates split-brain: cache and pending Delta writes cannot diverge      │
+│                                                                                  │
+│                                      │                                           │
+│                                      │ Asynchronous Single-Writer Flush          │
+│                                      │ (OutboxWorker with leader election &      │
+│                                      │  exponential backoff)                     │
+│                                      ▼                                           │
+│   ────────────────────────────────────────────────────────────────────────────   │
+│   TIER 2: AUTHORITATIVE MASTER STORE (Databricks Lakebase Delta Tables)          │
+│   ────────────────────────────────────────────────────────────────────────────   │
+│   • <catalog>.unify_lakebase schema:                                             │
+│     - entities: Canonical business schemas and versioned ontology                │
+│     - dynamic_layers: Catalog, schema, view/table states, and securables         │
+│     - match_strategies & survivorship_matrices: Fellegi-Sunter weights & rules   │
+│     - audit_log: Append-only, SHA-256 hash-chained immutable provenance          │
+│                                                                                  │
+│   • Enterprise Lakehouse Capabilities:                                           │
+│     - Change Data Feed (delta.enableChangeDataFeed = true)                       │
+│     - Full Delta Time Travel: VERSION AS OF / TIMESTAMP AS OF                    │
+│     - Zero ConcurrentModificationException: Exactly one worker writes to Delta   │
+│                                                                                  │
+└──────────────────────────────────────────────────────────────────────────────────┘
 ```
-                   HYBRID CONTROL-PLANE METASTORE
-  ┌─────────────────────────────────────────────────────────────────┐
-  │  OPERATIONAL CACHE (Postgres/Redis)  [Sub-5ms UI Reads & Locks] │
-  │  • Steward review queue active locks (eliminates Delta conflicts)│
-  │  • Real-time web session configs & dropdown caching             │
-  └──────────────────────────────┬──────────────────────────────────┘
-                                 │ Continuous Asynchronous Sync
-                                 ▼
-  ┌─────────────────────────────────────────────────────────────────┐
-  │  DATABRICKS LAKEBASE METASTORE (system.unify_lakebase Delta)    │
-  │  • Canonical entity schemas & domain models                     │
-  │  • Dynamic layer state registries & securables                  │
-  │  • Fellegi-Sunter weights & blocking rules                      │
-  │  • Immutable column-level provenance & audit lineage            │
-  └─────────────────────────────────────────────────────────────────┘
-```
 
-Key Architectural Benefits:
-- **Zero Concurrency Lock Exceptions**: Operational cache locks prevent Delta `ConcurrentModificationException` during multi-steward simultaneous reviews.
-- **Sub-5ms UI Latency**: Point queries bypass Serverless SQL cold-starts and run in < 5ms.
-- **Enterprise Immutability**: All consolidated changes are checkpointed to `system.unify_lakebase` with full Delta time-travel (`VERSION AS OF`) for regulatory compliance.
+---
 
-________________________________________
+### 9.3 Key Architectural Benefits & Mechanics
+
+1. **Sub-5ms UI & API Latency**:
+   - Web UI queries for canonical entity definitions, source registry metadata, and layer statuses read directly from PostgreSQL/Redis `cache_entries`.
+   - Bypasses Databricks SQL Warehouse cold starts and HTTP REST poll loops, delivering a responsive sub-5ms operational experience.
+
+2. **Complete Elimination of Delta `ConcurrentModificationException`**:
+   - The `OutboxWorker` elects a single leader process across microservice replicas via `LockManager`.
+   - The elected worker flushes outbox events to Databricks Delta Lake sequentially. Because there is strictly one writer per Delta table, write conflicts and OCC exceptions are completely eliminated.
+
+3. **Distributed Fencing Tokens for Data Stewards**:
+   - Data stewards reviewing potential duplicate merges acquire an exclusive lease (`golden_record:<id>`) with an auto-incrementing fencing token.
+   - If a steward's session stalls or times out, subsequent writes with a stale fencing token are rejected (`STALE_FENCING_TOKEN`), preventing split-brain overwrites and race conditions.
+
+4. **Strict FIFO Head-of-Line Ordering for Audit Hash Chains**:
+   - Every mutation produces a hash-chained audit event (`audit_log` with SHA-256 `curr_hash = H(prev_hash + payload)`).
+   - The write-through worker flushes outbox records in strict ID order. If an event transiently fails, subsequent events wait while retries execute with exponential backoff (`computeBackoffMs`), preserving cryptographic chain continuity.
+
+5. **Cost Optimization & Fault Resilience**:
+   - Repetitive operational reads do not consume Databricks Serverless DBUs.
+   - During transient network partitions or Databricks SQL maintenance windows, the operational store continues accepting and serving reads and buffering writes in the durable outbox queue.
+
+____
 10. Dynamic Layer Spawning & Automated TTL Governance
 
 Unify AI dynamically provisions database layers across Unity Catalog on demand with strict governance:

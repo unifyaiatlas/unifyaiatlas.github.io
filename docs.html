@@ -1200,6 +1200,101 @@ erDiagram
               </div>
             </div>
 
+            <!-- Architectural Inquiry & Solution: Lakebase vs Operational Cache (TASK-2.4) -->
+            <div class="callout" style="border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.08); margin-top: 28px;">
+              <div class="callout-title" style="color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+                <span>⚡</span> Architectural Inquiry: Can Lakebase (Delta Lake in Unity Catalog) Alone Be Used for the Operational Control Plane?
+              </div>
+              <p style="margin-top: 8px; line-height: 1.6; color: #e2e8f0;">
+                A fundamental architectural consideration is whether <strong>Databricks Lakebase</strong> (<code>system.unify_lakebase</code> Delta tables) 
+                can serve directly on the hot path for real-time user interactions, UI dropdowns, and data steward merge reviews. 
+                While Delta Lake provides enterprise ACID guarantees, immutable governance, time-travel history (<code>VERSION AS OF</code>), 
+                and unified SQL access, relying on Lakebase <em>alone</em> creates severe operational bottlenecks:
+              </p>
+              <ul style="margin: 10px 0 12px 20px; line-height: 1.7; color: #cbd5e1;">
+                <li><strong>OLAP Query Latency (200ms &ndash; 2,000ms+):</strong> Every query via the Databricks Serverless SQL REST API incurs network transit, statement lifecycle state polling (<code>PENDING</code> &rarr; <code>RUNNING</code> &rarr; <code>SUCCEEDED</code>), and analytical engine compilation. This is orders of magnitude too slow for interactive UI screens requiring sub-5ms SLA.</li>
+                <li><strong>Optimistic Concurrency Control (OCC) Collisions:</strong> Delta Lake commits optimistically at the table/file level. Concurrent writes (<code>MERGE</code> or <code>INSERT</code>) from multiple data stewards or microservice replicas simultaneously throw <code>ConcurrentModificationException</code>.</li>
+                <li><strong>Absence of Distributed Leases &amp; Mutexes:</strong> Delta Lake lacks lightweight, short-lived distributed locks with heartbeat expiration and monotonic fencing tokens to coordinate active data steward sessions.</li>
+                <li><strong>Continuous Serverless DBU Burn:</strong> Firing Databricks SQL queries for repetitive UI dropdown lookups, polling loops, and micro-transactions incurs significant compute costs and risks hitting workspace rate limits.</li>
+              </ul>
+            </div>
+
+            <!-- Dual-Tier Architecture & Comparison Matrix -->
+            <div class="card" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 10px; padding: 22px; margin: 24px 0;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <h4 style="color: #fff; font-size: 15px; margin: 0; font-family: var(--font-mono); display: flex; align-items: center; gap: 8px;">
+                  <span style="color: var(--primary-light);">🛡️</span> TASK-2.4: Dual-Tier Metastore (Operational Cache &amp; Delta Write-Through Synchronizer)
+                </h4>
+                <span class="tag" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600;">TASK-2.4 ARCHITECTURE</span>
+              </div>
+
+              <p style="color: var(--text-secondary); font-size: 13.5px; line-height: 1.6; margin-bottom: 18px;">
+                To resolve this trade-off, Unify AI pairs <strong>Databricks Lakebase</strong> with <strong><code>@unify/operational-cache</code></strong> 
+                in a dual-tier control-plane topology. High-frequency reads and distributed mutexes run against an in-memory/transactional operational store 
+                (PostgreSQL/Redis), while an asynchronous write-through synchronizer (<code>OutboxWorker</code>) flushes changes to Databricks Delta tables.
+              </p>
+
+              <!-- Comparison Table -->
+              <div class="table-responsive" style="margin-bottom: 20px;">
+                <table class="table" style="font-size: 12.5px; border-collapse: separate; border-spacing: 0; width: 100%;">
+                  <thead>
+                    <tr style="background: rgba(30, 41, 59, 0.7);">
+                      <th style="padding: 10px 14px; color: var(--primary-light); border-bottom: 1px solid var(--border-subtle); width: 22%;">Dimension</th>
+                      <th style="padding: 10px 14px; color: #f87171; border-bottom: 1px solid var(--border-subtle); width: 38%;">Lakebase Alone (Delta / Serverless SQL)</th>
+                      <th style="padding: 10px 14px; color: #34d399; border-bottom: 1px solid var(--border-subtle); width: 40%;">Dual-Tier Metastore (TASK-2.4 + Lakebase)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="cell-mono" style="color: #e2e8f0; font-weight: 600;">Query Latency</td>
+                      <td style="color: #94a3b8;">200ms &ndash; 2,000ms+ (OLAP query execution REST polling)</td>
+                      <td style="color: #6ee7b7; font-weight: 500;"><strong>&lt; 5ms</strong> (Sub-millisecond reads from indexed <code>cache_entries</code>)</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-mono" style="color: #e2e8f0; font-weight: 600;">Concurrency Control</td>
+                      <td style="color: #94a3b8;">Optimistic Concurrency Control &rarr; <code>ConcurrentModificationException</code> on collision</td>
+                      <td style="color: #6ee7b7; font-weight: 500;"><strong>Zero Write Conflicts</strong> &rarr; Single-writer <code>OutboxWorker</code> flushes Delta in strict FIFO order</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-mono" style="color: #e2e8f0; font-weight: 600;">Distributed Locking</td>
+                      <td style="color: #94a3b8;">None natively supported in Delta Lake</td>
+                      <td style="color: #6ee7b7; font-weight: 500;"><strong>Distributed Leases + Monotonic Fencing Tokens</strong> (<code>golden_record:&lt;id&gt;</code> prevents steward collisions)</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-mono" style="color: #e2e8f0; font-weight: 600;">Audit &amp; Immutability</td>
+                      <td style="color: #94a3b8;">Enterprise Delta tables, Change Data Feed, and Time Travel</td>
+                      <td style="color: #6ee7b7; font-weight: 500;"><strong>Fully Preserved</strong>: Delta Lake remains authoritative L2 system of record with SHA-256 hash chains</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-mono" style="color: #e2e8f0; font-weight: 600;">Cost &amp; Resilience</td>
+                      <td style="color: #94a3b8;">High Serverless DBU burn; UI vulnerable to warehouse restarts</td>
+                      <td style="color: #6ee7b7; font-weight: 500;"><strong>Zero DBU burn for reads</strong>; UI stays responsive during warehouse cold starts or maintenance</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- 5 Core Mechanics Grid -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+                <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px;">
+                  <strong style="color: var(--primary-light); font-size: 12.5px; display: block; margin-bottom: 4px;">⚡ Sub-5ms Point Lookups</strong>
+                  <p style="color: var(--text-secondary); font-size: 11.5px; margin: 0; line-height: 1.5;">JSON documents in <code>cache_entries</code> serve canonical entity schemas, source configs, and layer states instantly.</p>
+                </div>
+                <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px;">
+                  <strong style="color: #34d399; font-size: 12.5px; display: block; margin-bottom: 4px;">🔒 Steward Fencing Tokens</strong>
+                  <p style="color: var(--text-secondary); font-size: 11.5px; margin: 0; line-height: 1.5;"><code>LockManager</code> generates monotonic fencing tokens preventing race conditions when stewards review duplicate customer records.</p>
+                </div>
+                <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px;">
+                  <strong style="color: #f59e0b; font-size: 12.5px; display: block; margin-bottom: 4px;">📦 Transactional UnitOfWork</strong>
+                  <p style="color: var(--text-secondary); font-size: 11.5px; margin: 0; line-height: 1.5;">Cache mutations and pending Delta outbox events commit in a single ACID transaction, eliminating split-brain divergence.</p>
+                </div>
+                <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px;">
+                  <strong style="color: #a78bfa; font-size: 12.5px; display: block; margin-bottom: 4px;">🔄 Strict FIFO Delta Sync</strong>
+                  <p style="color: var(--text-secondary); font-size: 11.5px; margin: 0; line-height: 1.5;">Elected <code>OutboxWorker</code> flushes events in strict head-of-line order with exponential backoff, preserving SHA-256 hash chains.</p>
+                </div>
+              </div>
+            </div>
+
             <h4 style="color: #fff; font-size: 15px; margin: 24px 0 12px; font-family: var(--font-mono);">
               SQL DDL: Lakebase System Schema Creation in Databricks
             </h4>

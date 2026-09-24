@@ -6051,9 +6051,12 @@ function renderMicroservicesTab() {
 function renderLakebaseTab() {
   return `
     <div class="card" style="padding: 24px; margin-bottom: 24px;">
-      <h3 style="font-family: var(--font-display); font-size: 18px; color: #fff; margin-bottom: 10px;">
-        🗄️ Databricks Lakebase Active Metastore Architecture
-      </h3>
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <h3 style="font-family: var(--font-display); font-size: 18px; color: #fff; margin: 0;">
+          🗄️ Databricks Lakebase Active Metastore & Dual-Tier Architecture
+        </h3>
+        <span class="tag" style="background: rgba(99, 102, 241, 0.15); color: var(--primary-light); font-weight: 600;">EPIC 2 / TASK-2.4</span>
+      </div>
       <p style="color: var(--text-secondary); font-size: 13.5px; line-height: 1.6; margin-bottom: 16px;">
         Databricks Lakebase serves as the unified metastore for Unify AI. Stored under the dedicated Unity Catalog schema 
         <code>system.unify_lakebase</code>, it manages the full catalog of business entities, dynamic layer states, 
@@ -6073,6 +6076,68 @@ function renderLakebaseTab() {
           <strong style="color: var(--warning); font-family: var(--font-mono); font-size: 13px;">system.unify_lakebase.match_rules</strong>
           <p style="color: var(--text-secondary); font-size: 12px; margin-top: 6px;">Fellegi-Sunter weights, fuzzy algorithms, blocking keys, survivorship priorities.</p>
         </div>
+      </div>
+
+      <!-- Architectural Inquiry: Why Lakebase Alone Cannot Serve Operational Hot Path -->
+      <div style="background: rgba(245, 158, 11, 0.08); border-left: 4px solid #f59e0b; padding: 16px 20px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
+        <div style="color: #fbbf24; font-weight: 700; font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+          <span>⚡</span> Architectural Rationale: Can Lakebase Alone Serve the Operational Hot Path?
+        </div>
+        <p style="color: #e2e8f0; font-size: 13px; line-height: 1.6; margin: 0 0 10px 0;">
+          While Delta Lake is the optimal governed system of record (L2), using it directly for operational UI interactions and multi-steward edits creates fundamental mismatches:
+        </p>
+        <ul style="color: #cbd5e1; font-size: 12.5px; line-height: 1.6; margin: 0 0 0 18px; padding: 0;">
+          <li><strong>OLAP Query Latency:</strong> Serverless SQL API queries take 200ms–2,000ms+ (statement dispatch & polling), whereas interactive UI requires sub-5ms responses.</li>
+          <li><strong>Delta OCC Write Collisions:</strong> Delta Lake throws <code>ConcurrentModificationException</code> when multiple stewards or services merge changes into the same table simultaneously.</li>
+          <li><strong>Absence of Distributed Mutexes:</strong> Delta Lake lacks sub-second leasing with monotonic fencing tokens needed to coordinate steward merge sessions (<code>golden_record:&lt;id&gt;</code>).</li>
+          <li><strong>Compute DBU Churn:</strong> Continuous polling and micro-reads burn expensive Databricks Serverless compute.</li>
+        </ul>
+      </div>
+
+      <!-- TASK-2.4 Dual-Tier Solution & Comparison -->
+      <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 18px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <h4 style="color: #fff; font-size: 14px; margin: 0; font-family: var(--font-mono); display: flex; align-items: center; gap: 8px;">
+            <span>🛡️</span> TASK-2.4: Low-Latency Operational Cache & Delta Write-Through Synchronizer
+          </h4>
+          <span style="font-family: var(--font-mono); font-size: 11px; color: var(--primary-light);">packages/@unify/operational-cache</span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 12.5px; line-height: 1.6; margin-bottom: 14px;">
+          TASK-2.4 introduces a dual-tier metastore architecture: PostgreSQL/Redis acts as the <strong>L1 Operational Tier</strong> for sub-5ms UI reads and distributed steward locks, while Databricks Lakebase acts as the <strong>L2 Master System of Record</strong>.
+        </p>
+
+        <!-- Compact Comparison Table -->
+        <table style="width: 100%; font-size: 12px; border-collapse: collapse; margin-bottom: 14px;">
+          <thead>
+            <tr style="background: rgba(30, 41, 59, 0.6);">
+              <th style="padding: 8px 10px; color: var(--primary-light); text-align: left; border-bottom: 1px solid var(--border-subtle); width: 25%;">Feature</th>
+              <th style="padding: 8px 10px; color: #f87171; text-align: left; border-bottom: 1px solid var(--border-subtle); width: 35%;">Lakebase Alone (Delta)</th>
+              <th style="padding: 8px 10px; color: #34d399; text-align: left; border-bottom: 1px solid var(--border-subtle); width: 40%;">Dual-Tier Metastore (TASK-2.4)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 8px 10px; font-weight: 600; color: #e2e8f0; border-bottom: 1px solid rgba(255,255,255,0.05);">Point Read Latency</td>
+              <td style="padding: 8px 10px; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.05);">200ms – 2,000ms+ (OLAP REST)</td>
+              <td style="padding: 8px 10px; color: #6ee7b7; font-weight: 500; border-bottom: 1px solid rgba(255,255,255,0.05);">&lt; 5ms (cache_entries)</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 10px; font-weight: 600; color: #e2e8f0; border-bottom: 1px solid rgba(255,255,255,0.05);">Concurrency Control</td>
+              <td style="padding: 8px 10px; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.05);">Delta OCC collisions under multi-stewards</td>
+              <td style="padding: 8px 10px; color: #6ee7b7; font-weight: 500; border-bottom: 1px solid rgba(255,255,255,0.05);">Single-writer Outbox worker (0 conflicts)</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 10px; font-weight: 600; color: #e2e8f0; border-bottom: 1px solid rgba(255,255,255,0.05);">Distributed Locks</td>
+              <td style="padding: 8px 10px; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.05);">None natively available</td>
+              <td style="padding: 8px 10px; color: #6ee7b7; font-weight: 500; border-bottom: 1px solid rgba(255,255,255,0.05);">Lease manager with monotonic fencing tokens</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 10px; font-weight: 600; color: #e2e8f0;">Audit Hash Chain</td>
+              <td style="padding: 8px 10px; color: #94a3b8;">SHA-256 tamper-proof log in Delta</td>
+              <td style="padding: 8px 10px; color: #6ee7b7; font-weight: 500;">Strict FIFO head-of-line sync preserves chain</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <h4 style="color: #fff; font-size: 14px; margin-bottom: 8px; font-family: var(--font-mono);">
@@ -6098,7 +6163,6 @@ TBLPROPERTIES ('delta.enableChangeDataFeed' = 'true');</code></pre>
   `;
 }
 
-// Layer Spawner Tab
 function renderLayerSpawnerTab() {
   return `
     <div class="card" style="padding: 24px;">
